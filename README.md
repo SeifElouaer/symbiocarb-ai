@@ -2,6 +2,8 @@
 > **Enterprise B2B SaaS Platform for Tunisian Industrial SMEs & Agro-Industries**  
 > *EU CBAM Compliance • STEG MT/HT Energy Optimization • ANME FTE Subsidies • BioClaira Circular Symbiosis • Shop-Floor DarjaBot*
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FSeifElouaer%2Fsymbiocarb-ai&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,GEMINI_API_KEY,TELEGRAM_BOT_TOKEN,TELEGRAM_DEFAULT_CHAT_ID,NEXT_PUBLIC_DEFAULT_LOCALE,NEXT_PUBLIC_APP_URL)
+
 ---
 
 ## 🌟 Executive Summary & Tunisian Industrial Context
