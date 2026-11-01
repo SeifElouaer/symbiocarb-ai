@@ -113,13 +113,23 @@ export function Sidebar() {
       </div>
 
       {/* Active Persona Facility Card */}
-      <div className="rounded-xl border border-card-border bg-card p-3.5 space-y-2">
+      <div className={`rounded-xl border p-3.5 space-y-2 ${
+        persona === 'custom'
+          ? 'border-emerald-500/40 bg-emerald-950/20'
+          : 'border-card-border bg-card'
+      }`}>
         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1 font-medium">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-            {t.nav.activePersona}
+            <ShieldCheck className={`h-3.5 w-3.5 ${persona === 'custom' ? 'text-emerald-400' : 'text-amber-400'}`} />
+            {persona === 'custom' ? 'Usine Client Active' : t.nav.activePersona}
           </span>
-          <span className="font-mono text-[10px] text-emerald-500 uppercase font-bold">ISO 14064</span>
+          <span className={`font-mono text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
+            persona === 'custom'
+              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+              : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+          }`}>
+            {persona === 'custom' ? 'Mode Réel' : 'Exemple Démo'}
+          </span>
         </div>
         <div className="text-xs font-bold text-foreground line-clamp-1">
           {personaDetails?.name}

@@ -8,24 +8,21 @@
 import React from 'react';
 import Link from 'next/link';
 import { useTranslation, PersonaSlug } from '@/lib/i18n/use-translation';
-import { useTheme } from '@/lib/theme/ThemeProvider';
 import { useAuth } from '@/lib/auth/auth-context';
 import { 
   Building2, 
   Languages, 
-  Sun, 
-  Moon, 
   User, 
   LogOut, 
   Flame, 
   BookOpen,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
 
 export function Navbar() {
   const { locale, setLocale, persona, setPersona, t } = useTranslation();
-  const { theme, resolvedTheme, toggleTheme } = useTheme();
   const { user, isAuthenticated, openAuthModal, signOut } = useAuth();
 
   return (
@@ -62,25 +59,39 @@ export function Navbar() {
             <span>Centre Réglementaire</span>
           </Link>
 
-          {/* Persona Switcher (if signed in) */}
+          {/* Persona & Operational Mode Switcher (Real vs Demo Examples) */}
           {isAuthenticated && (
             <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-card-border bg-card p-1">
-              <Building2 className="h-4 w-4 ms-2 text-emerald-500" />
+              <Building2 className={`h-4 w-4 ms-2 ${persona === 'custom' ? 'text-emerald-400' : 'text-amber-400'}`} />
               <select
                 value={persona}
                 onChange={(e) => setPersona(e.target.value as PersonaSlug)}
-                className="bg-transparent text-xs font-medium text-foreground outline-none cursor-pointer pe-2 py-1"
+                className="bg-transparent text-xs font-semibold text-foreground outline-none cursor-pointer pe-2 py-1"
               >
-                <option value="benarous" className="bg-background text-foreground">
-                  🏭 Ben Arous (Mécanique & CBAM)
-                </option>
-                <option value="tozeur" className="bg-background text-foreground">
-                  🌴 Tozeur (Dattes & BioClaira)
-                </option>
-                <option value="sfax" className="bg-background text-foreground">
-                  🫒 Sfax (Huilerie & Pointe STEG)
-                </option>
+                <optgroup label="🏢 Données Réelles de l'Usine Client" className="bg-[#090D16] text-emerald-400 font-bold">
+                  <option value="custom" className="bg-[#090D16] text-white">
+                    🏢 Mon Usine (Données Réelles Personnalisées)
+                  </option>
+                </optgroup>
+                <optgroup label="🎮 Données Démo (Exemples & Archétypes Types)" className="bg-[#090D16] text-amber-400 font-bold">
+                  <option value="benarous" className="bg-[#090D16] text-white">
+                    Exemple 1 : Ben Arous (Mécanique & CBAM)
+                  </option>
+                  <option value="tozeur" className="bg-[#090D16] text-white">
+                    Exemple 2 : Tozeur (Dattes & BioClaira)
+                  </option>
+                  <option value="sfax" className="bg-[#090D16] text-white">
+                    Exemple 3 : Sfax (Huilerie & Pointe STEG)
+                  </option>
+                </optgroup>
               </select>
+              <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded me-1 ${
+                persona === 'custom'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+              }`}>
+                {persona === 'custom' ? 'Mode Réel' : 'Démo'}
+              </span>
             </div>
           )}
 
@@ -118,20 +129,6 @@ export function Navbar() {
               تونسية
             </button>
           </div>
-
-          {/* Dark / Light Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg border border-card-border bg-card text-muted-foreground hover:text-foreground transition-all shadow-sm"
-            aria-label="Basculer le thème"
-            title={resolvedTheme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'}
-          >
-            {resolvedTheme === 'dark' ? (
-              <Sun className="h-4 w-4 text-amber-400" />
-            ) : (
-              <Moon className="h-4 w-4 text-blue-500" />
-            )}
-          </button>
 
           {/* Authentication State Button */}
           {isAuthenticated && user ? (

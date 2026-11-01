@@ -33,6 +33,11 @@ export const en = {
       desc: 'Reactive penalties cos φ = 0.74 & direct EU CBAM customs reporting on steel/aluminum',
       location: 'El Mghira Industrial Zone',
     },
+    custom: {
+      name: 'My Custom Industrial Plant (Real Operational Data)',
+      desc: 'Calculations based on your real uploaded STEG bills and BOM purchases',
+      location: 'Client Industrial Site (Tunisia)',
+    },
   },
 
   cockpit: {

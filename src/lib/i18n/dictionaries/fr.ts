@@ -36,6 +36,11 @@ export const fr = {
       desc: 'Pénalités cos φ = 0.74 & déclaration douanière CBAM UE acier/alu',
       location: 'Zone Industrielle El Mghira',
     },
+    custom: {
+      name: 'Mon Usine (Données Réelles Personnalisées)',
+      desc: 'Calculs basés sur vos propres factures STEG et nomenclatures réelles',
+      location: 'Site Industriel Client (Tunisie)',
+    },
   },
 
   // Dashboard Cockpit

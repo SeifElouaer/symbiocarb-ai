@@ -11,7 +11,7 @@ import { fr } from './dictionaries/fr';
 import { en } from './dictionaries/en';
 import { arTN } from './dictionaries/ar-TN';
 
-export type PersonaSlug = 'sfax' | 'tozeur' | 'benarous';
+export type PersonaSlug = 'sfax' | 'tozeur' | 'benarous' | 'custom';
 
 interface I18nContextType {
   locale: Locale;
@@ -41,7 +41,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       setLocaleState(savedLocale);
     }
     const savedPersona = localStorage.getItem('symbiocarb_persona') as PersonaSlug | null;
-    if (savedPersona && (savedPersona === 'sfax' || savedPersona === 'tozeur' || savedPersona === 'benarous')) {
+    if (savedPersona && (savedPersona === 'sfax' || savedPersona === 'tozeur' || savedPersona === 'benarous' || savedPersona === 'custom')) {
       setPersonaState(savedPersona);
     }
   }, []);

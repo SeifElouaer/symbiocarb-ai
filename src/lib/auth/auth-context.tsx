@@ -76,6 +76,15 @@ const DEMO_USERS: Record<PersonaSlug, UserProfile> = {
     organizationName: 'Huilerie Moderne de Sfax',
     role: 'Responsable QHSE & Audit STEG',
   },
+  custom: {
+    id: 'client-real-factory-01',
+    email: 'direction@mon-usine.tn',
+    fullName: 'Direction Usine (Données Réelles)',
+    isDemo: false,
+    persona: 'custom',
+    organizationName: 'Mon Usine Industrielle (Tunisie)',
+    role: 'Directeur Général & Exploitation',
+  },
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
