@@ -9,6 +9,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useTranslation, PersonaSlug } from '@/lib/i18n/use-translation';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useAudit } from '@/lib/audit/audit-context';
 import { 
   Building2, 
   Languages, 
@@ -18,12 +19,14 @@ import {
   BookOpen,
   Sparkles,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  FileCheck2
 } from 'lucide-react';
 
 export function Navbar() {
   const { locale, setLocale, persona, setPersona, t } = useTranslation();
   const { user, isAuthenticated, openAuthModal, signOut } = useAuth();
+  const { openWizard } = useAudit();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-card-border bg-background/85 backdrop-blur-md transition-colors">
@@ -50,6 +53,17 @@ export function Navbar() {
 
         {/* Center / Right Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Audit Express Button (when logged in or browsing) */}
+          <button
+            onClick={openWizard}
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all shadow-sm"
+            title="Lancer l'audit express en 5 étapes guidées"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Audit Express</span>
+            <span className="sm:hidden">Audit</span>
+          </button>
+
           {/* Quick Regulatory Blog Link */}
           <Link
             href="/blog"

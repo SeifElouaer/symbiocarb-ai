@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/i18n/use-translation';
 import { 
   LayoutDashboard, 
+  Sparkles,
   Zap, 
   Globe2, 
   Recycle, 
@@ -30,6 +31,14 @@ export function Sidebar() {
       href: '/',
       icon: LayoutDashboard,
       active: pathname === '/',
+    },
+    {
+      name: locale === 'ar-TN' ? 'التشخيص السريع (5 مراحل)' : 'Audit & Diagnostic Express',
+      href: '/audit',
+      icon: Sparkles,
+      active: pathname.startsWith('/audit'),
+      badge: '5 Étapes',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-bold',
     },
     {
       name: t.nav.energy,

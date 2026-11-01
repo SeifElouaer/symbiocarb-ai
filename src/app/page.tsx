@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useTranslation } from '@/lib/i18n/use-translation';
+import { useAudit } from '@/lib/audit/audit-context';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { 
   FALLBACK_BILLS, 
@@ -53,6 +54,7 @@ import {
 export default function HomePage() {
   const { isAuthenticated, openAuthModal, signInAsDemo } = useAuth();
   const { t, locale, persona } = useTranslation();
+  const { openWizard, results } = useAudit();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   // Active persona bill and organization (used in both preview and cockpit)
@@ -111,6 +113,53 @@ export default function HomePage() {
           ]}
           regulation="Règlement (UE) 2023/956, Arrêté Tarifaire STEG MT, Norme ISO 14064-1"
         />
+
+        {/* Guided Industrial Audit Quick Launcher Banner */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-2xl glass-panel-elevated border border-emerald-500/25 bg-gradient-to-r from-emerald-500/10 via-[#111827] to-transparent shadow-lg">
+          <div className="flex items-center gap-3.5">
+            <div className="h-11 w-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 shadow-inner">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-white">
+                  Assistant d&apos;Audit Énergétique & Décarbonation en 5 Étapes
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                  {results.readinessScorePercent}% Complété
+                </span>
+                {persona === 'custom' ? (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Mode Données Réelles Usine
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    Mode Consultation Démo
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+                Renseignez les consommations réelles de votre usine (ou appliquez un profil certifié tunisien) pour remplacer 6 mois de cabinet d&apos;audit en 5 minutes.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
+            <button
+              onClick={openWizard}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 transition-all shadow-md shadow-emerald-500/20 w-full sm:w-auto"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Lancer / Modifier l&apos;Audit Guidé
+            </button>
+            <Link
+              href="/audit"
+              className="hidden sm:flex items-center justify-center px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold border border-white/10 transition-all"
+            >
+              Vue Complète
+            </Link>
+          </div>
+        </div>
 
         {/* 4 Core Industrial KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -207,6 +256,22 @@ export default function HomePage() {
             <div className="space-y-3">
               <h2 className="text-sm font-bold text-foreground">Modules Opérationnels Usine</h2>
               <div className="space-y-2">
+                <Link
+                  href="/audit"
+                  className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/60 transition-all group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="h-4 w-4 text-emerald-400" />
+                    <div>
+                      <div className="text-xs font-bold text-foreground group-hover:text-emerald-400 transition-colors">
+                        Assistant d&apos;Audit Guidé (5 Étapes)
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">Diagnostic complet ISO & CBAM express</div>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-emerald-400" />
+                </Link>
+
                 <Link
                   href="/energy"
                   className="flex items-center justify-between p-3 rounded-xl border border-card-border bg-card hover:border-amber-500/40 transition-all group"

@@ -8,9 +8,11 @@ import React from 'react';
 import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
 import { I18nProvider } from '@/lib/i18n/use-translation';
+import { AuditProvider } from '@/lib/audit/audit-context';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { AuditWizardModal } from '@/components/audit/AuditWizardModal';
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -30,6 +32,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
       {/* Google OAuth & Email Auth Modal */}
       <AuthModal />
+
+      {/* Guided Industrial Audit Wizard (5-Step Express) */}
+      <AuditWizardModal />
     </div>
   );
 }
@@ -39,7 +44,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <AuthProvider>
         <I18nProvider>
-          <AppShellInner>{children}</AppShellInner>
+          <AuditProvider>
+            <AppShellInner>{children}</AppShellInner>
+          </AuditProvider>
         </I18nProvider>
       </AuthProvider>
     </ThemeProvider>
