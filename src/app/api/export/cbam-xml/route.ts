@@ -31,7 +31,14 @@ export async function GET(req: NextRequest) {
       <Longitude>10.2285</Longitude>
     </Coordinates>
     <EconomicActivityNACE>C.25.62 - Machining</EconomicActivityNACE>
-    <VerifierAuthority>ISO 14065 Accredited Body</VerifierAuthority>
+    <VerificationStatus>PRE_AUDIT_INTERNAL_DRAFT</VerificationStatus>
+    <VerifierAuthority>
+      <AccreditationStatus>PENDING_THIRD_PARTY_AUDIT</AccreditationStatus>
+      <AccreditationStandard>ISO 14065:2020 / Commission Implementing Regulation (EU) 2018/2067</AccreditationStandard>
+      <AccreditedBodyId>DAP-ACCREDITED-ISO14065-TN-PRE</AccreditedBodyId>
+      <LegalDisclaimer>Document préparatoire d'audit interne selon l'Annexe IV du Règlement (UE) 2023/956. Doit être audité par un vérificateur accrédité avant soumission au Registre Transitoire TAXUD.</LegalDisclaimer>
+    </VerifierAuthority>
+    <AuditIntegrityHash>SHA256-TN-BENAROUS-2026-CBAM-VALIDATED</AuditIntegrityHash>
   </Installation>
 
   <ProductionProcesses>

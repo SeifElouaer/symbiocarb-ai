@@ -156,6 +156,9 @@ export interface StegTariffResult {
   tvaTnd: number;
   totalTtcTnd: number;
   co2Tons: number;
+  isBalanceValid: boolean;
+  balanceDiscrepancyKwh: number;
+  tariffRegime?: StegTariffType;
 }
 
 export interface CosPhiResult {
@@ -164,6 +167,11 @@ export interface CosPhiResult {
   currentTanPhi: number;
   targetTanPhi: number;
   requiredQcKvar: number;
+  nominalQcWithDeratingKvar: number;
+  ambientDeratingFactor: number;
+  thdUPercent: number;
+  thdIPercent: number;
+  harmonicOrderRisk: string;
   annualPenaltySavedTnd: number;
   jouleLossesReducedKwh: number;
   jouleSavingsTnd: number;
@@ -189,12 +197,27 @@ export interface BioClairaSimulationResult {
   syngasBioOilMwh: number;
   estimatedBetSurfaceAreaM2g: number;
   iodineNumberMgG: number;
+  poreSinteringWarning: boolean;
   
-  // Financials & Carbon
+  // Process Engineering & Effluents
+  requiresPreDrying: boolean;
+  dryingThermalMwh: number;
+  acidEffluentVolumeM3: number;
+  effluentTreatmentCostTnd: number;
+  transportEmissionsTco2e: number;
+
+  // Financials, CAPEX & Discounted Metrics
   grossMarketValueTnd: number;
   marketPricePerTonTnd: number;
   estimatedAnnualOpexTnd: number;
   netAnnualProfitTnd: number;
+  totalCapexTnd: number;
+  anmeSubsidizedCapexTnd: number;
+  npv7YearsTnd: number;
+  irrPercent: number;
+  paybackYears: number;
+
+  // Carbon Accounting
   avoidedMethaneTco2e: number;
   substitutedFossilCarbonTco2e: number;
   netAvoidedTco2e: number;
@@ -213,6 +236,11 @@ export interface CbamCalculationResult {
   estimatedCbamTaxLiabilityEur: number;
   estimatedCbamTaxLiabilityTnd: number;
   freeAllocationBenchmarkGap: number;
+  verificationStatus: 'PRE_AUDIT_DRAFT' | 'VERIFIER_REVIEW' | 'ACCREDITED_CERTIFIED';
+  accreditationBodyId: string;
+  auditIntegrityHash: string;
+  regulatoryDisclaimer: string;
+  gridEmissionSource: string;
 }
 
 export interface LoadShiftingResult {
@@ -221,5 +249,17 @@ export interface LoadShiftingResult {
   annualBillSavingsTnd: number;
   avoidedGridCarbonKg: number;
   newPointeLoadKwh: number;
+  additionalLaborNightCostTnd: number;
+  nightTransportCostTnd: number;
+  netTrueMonthlyGainTnd: number;
+  netTrueAnnualGainTnd: number;
+  isEconomicallyViable: boolean;
+  hrFeasibilityNote: string;
+}
+
+export interface ComplianceNotice {
+  inpdpNotice: string;
+  anpePermitRequired: boolean;
+  liabilityDisclaimer: string;
 }
 

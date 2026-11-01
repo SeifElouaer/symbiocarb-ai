@@ -124,10 +124,10 @@ export default function EnergyPage() {
             <div className="rounded-xl border border-white/5 bg-gray-800/60 p-4 space-y-1">
               <div className="text-[11px] text-gray-400 font-medium">{t.energy.qcRequired}</div>
               <div className="text-xl font-bold font-mono text-emerald-400">
-                {cosPhiResult.requiredQcKvar} <span className="text-xs text-gray-300">kVAR</span>
+                {cosPhiResult.nominalQcWithDeratingKvar} <span className="text-xs text-gray-300">kVAR installés</span>
               </div>
-              <div className="text-[10px] text-gray-400">
-                {cosPhiResult.antiHarmonicReactorRecommended ? 'Avec selfs 189 Hz' : 'Gradins standards'}
+              <div className="text-[10px] text-amber-300">
+                Déclassement TGBT 42°C (×{cosPhiResult.ambientDeratingFactor}) • Base: {cosPhiResult.requiredQcKvar} kVAR
               </div>
             </div>
 
@@ -151,10 +151,26 @@ export default function EnergyPage() {
               </div>
             </div>
           </div>
+
+          {/* Harmonic IEEE 519 & Resonance Risk Audit */}
+          <div className="rounded-xl border border-white/5 bg-gray-800/40 p-3.5 space-y-2 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-semibold text-gray-300 flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                Audit Harmonique Réseau (IEEE 519 / IEC 61000)
+              </span>
+              <span className="font-mono text-[11px] text-amber-400">
+                THD-U: {cosPhiResult.thdUPercent}% • THD-I: {cosPhiResult.thdIPercent}%
+              </span>
+            </div>
+            <p className="text-[11px] text-gray-400">
+              {cosPhiResult.harmonicOrderRisk}. {cosPhiResult.antiHarmonicReactorRecommended ? 'Protection obligatoire : Selfs anti-harmoniques désaccordées à 189 Hz (facteur p=7%) incluses dans le dimensionnement pour supprimer le risque de résonance.' : 'Réseau sain sans risque de résonance.'}
+            </p>
+          </div>
         </div>
 
         {/* Load Shifting Simulator */}
-        <div className="rounded-2xl border border-white/10 bg-gray-900/60 p-6 space-y-5 flex flex-col justify-between">
+        <div className="rounded-2xl border border-white/10 bg-gray-900/60 p-6 space-y-4 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
@@ -185,17 +201,30 @@ export default function EnergyPage() {
 
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3.5 space-y-2">
             <div className="text-xs text-emerald-300 font-semibold flex items-center justify-between">
-              <span>{locale === 'ar-TN' ? 'الاقتصاد الشهري المحقق :' : 'Économie Mensuelle :'}</span>
-              <span className="font-mono font-bold text-base text-white">
+              <span>Économie STEG Brute :</span>
+              <span className="font-mono font-bold text-sm text-white">
                 +{loadShiftResult.monthlyBillSavingsTnd.toLocaleString('fr-TN')} TND
               </span>
             </div>
-            <div className="text-[11px] text-emerald-200/80 flex items-center justify-between">
-              <span>{locale === 'ar-TN' ? 'كربون الشبكة المتجنب :' : 'CO₂ Réseau Évité :'}</span>
-              <span className="font-mono font-medium">
-                {(loadShiftResult.avoidedGridCarbonKg / 1000).toFixed(1)} tCO₂e/an
+            <div className="text-[11px] text-gray-400 border-t border-white/5 pt-1.5 space-y-1">
+              <div className="flex justify-between">
+                <span>Surprime salariale nuit (+50%) :</span>
+                <span className="font-mono text-red-400">-{loadShiftResult.additionalLaborNightCostTnd} TND</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Navettes ouvriers (nuit) :</span>
+                <span className="font-mono text-red-400">-{loadShiftResult.nightTransportCostTnd} TND</span>
+              </div>
+            </div>
+            <div className="text-xs border-t border-emerald-500/20 pt-1.5 font-bold flex items-center justify-between text-emerald-400">
+              <span>Gain Réel Net Entreprise :</span>
+              <span className="font-mono text-sm text-white">
+                +{loadShiftResult.netTrueMonthlyGainTnd.toLocaleString('fr-TN')} TND/mois
               </span>
             </div>
+            <p className="text-[10px] text-gray-400 leading-tight">
+              {loadShiftResult.hrFeasibilityNote}
+            </p>
           </div>
         </div>
       </div>

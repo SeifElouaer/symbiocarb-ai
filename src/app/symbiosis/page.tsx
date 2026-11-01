@@ -233,6 +233,70 @@ export default function SymbiosisPage() {
               </div>
             </div>
           </div>
+
+          {/* CAPEX, VAN 7 ans, TRI & Subvention ANME FTE */}
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                Viabilité Financière &amp; CAPEX Unité Industrielle BioClaira
+              </span>
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                Subvention ANME FTE Matériel 20% Déduite
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
+                <div className="text-[10px] text-gray-400">CAPEX Subventionné</div>
+                <div className="font-mono font-bold text-sm text-white mt-0.5">
+                  {bioResult.anmeSubsidizedCapexTnd.toLocaleString('fr-TN')} TND
+                </div>
+                <div className="text-[9px] text-gray-500">Brut: {bioResult.totalCapexTnd.toLocaleString()} TND</div>
+              </div>
+
+              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
+                <div className="text-[10px] text-gray-400">VAN sur 7 ans (8.5%)</div>
+                <div className="font-mono font-bold text-sm text-emerald-400 mt-0.5">
+                  +{bioResult.npv7YearsTnd.toLocaleString('fr-TN')} TND
+                </div>
+                <div className="text-[9px] text-emerald-300/80">Valeur Actuelle Nette</div>
+              </div>
+
+              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
+                <div className="text-[10px] text-gray-400">TRI (Taux Rentabilité)</div>
+                <div className="font-mono font-bold text-sm text-emerald-400 mt-0.5">
+                  {bioResult.irrPercent}%
+                </div>
+                <div className="text-[9px] text-gray-500">Rentabilité Interne</div>
+              </div>
+
+              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
+                <div className="text-[10px] text-gray-400">Délai Payback</div>
+                <div className="font-mono font-bold text-sm text-white mt-0.5">
+                  {bioResult.paybackYears} ans
+                </div>
+                <div className="text-[9px] text-gray-500">Amortissement net</div>
+              </div>
+            </div>
+
+            {/* Process & Environmental Guardrails */}
+            <div className="text-[11px] text-gray-400 border-t border-white/5 pt-2 flex flex-wrap gap-4">
+              {bioResult.requiresPreDrying && (
+                <span className="text-amber-400">
+                  ⚠️ Séchage thermique amont requis : {bioResult.dryingThermalMwh} MWh pour ramener l'humidité à 12%.
+                </span>
+              )}
+              {bioResult.acidEffluentVolumeM3 > 0 && (
+                <span className="text-blue-300">
+                  💧 Eaux de lavage acide : {bioResult.acidEffluentVolumeM3} m³ (traitement chaux : {bioResult.effluentTreatmentCostTnd.toLocaleString()} TND/an).
+                </span>
+              )}
+              <span className="text-gray-300">
+                🚚 Émissions transport (120 km) : {bioResult.transportEmissionsTco2e} tCO₂e • Agréments ANPE requis.
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

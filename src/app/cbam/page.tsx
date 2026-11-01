@@ -106,6 +106,27 @@ export default function CbamPage() {
         </div>
       </div>
 
+      {/* ISO 14065 Verifier Status & Legal Audit Banner */}
+      <div className="rounded-2xl border border-blue-500/20 bg-blue-950/20 p-4 space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0" />
+            <span className="text-xs font-bold text-white uppercase tracking-wider">
+              Certification ISO 14065 &amp; Registre TAXUD 2026
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono font-bold">
+              {cbamResult.verificationStatus}
+            </span>
+          </div>
+          <div className="text-[11px] font-mono text-gray-400">
+            Audit Hash: <span className="text-blue-300">{cbamResult.auditIntegrityHash}</span>
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-300 leading-relaxed">
+          {cbamResult.regulatoryDisclaimer}
+        </p>
+      </div>
+
       {/* Specific Embedded Emissions (SEE) Scorecard */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* SEE Value */}
