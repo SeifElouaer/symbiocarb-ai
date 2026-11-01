@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/i18n/use-translation';
+import { SectionHeader } from '@/components/layout/SectionHeader';
 import { 
   FileSearch, 
   Upload, 
@@ -76,6 +77,26 @@ export default function OcrPage() {
 
   return (
     <div className="space-y-6">
+      {/* Module Intelligence Header */}
+      <SectionHeader
+        title={t.ocr.title}
+        badge="Document AI Gemini 2.5"
+        badgeColor="bg-purple-500/10 text-purple-500 border-purple-500/20"
+        objective="Vous pouvez téléverser votre propre facture STEG MT (PDF ou photo smartphone) ou tester l'extraction sur des factures types tunisiennes. Gemini 2.5 Flash Vision extrait automatiquement chaque tranche horaire, calcule le cos φ et vérifie la cohérence comptable."
+        inputs={[
+          'Facture STEG Moyenne Tension (format PDF, scan ou photo)',
+          'Nomenclatures d\'achats fournisseurs (fichiers CSV / Excel)',
+          'Possibilité de tester immédiatement via les exemples réels préchargés'
+        ]}
+        deliverables={[
+          'Extraction structurée des 4 postes horaires (Jour, Pointe, Soir, Nuit)',
+          'Détection des dépassements de puissance souscrite (kVA)',
+          'Calcul du cos φ et de la redevance d\'énergie réactive (TND)',
+          'Formulaire d\'ingénierie modifiable et synchronisé avec le cockpit'
+        ]}
+        regulation="Spécifications de facturation STEG MT/HT, Décrets tarifaires de l'énergie en Tunisie"
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

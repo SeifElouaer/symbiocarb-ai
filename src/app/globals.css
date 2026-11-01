@@ -7,6 +7,30 @@
 :root {
   --background: #090D16;
   --foreground: #F9FAFB;
+  --card-bg: rgba(17, 24, 39, 0.75);
+  --card-elevated: rgba(22, 31, 48, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --muted-text: #9CA3AF;
+}
+
+html.dark {
+  --background: #090D16;
+  --foreground: #F9FAFB;
+  --card-bg: rgba(17, 24, 39, 0.75);
+  --card-elevated: rgba(22, 31, 48, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --muted-text: #9CA3AF;
+  color-scheme: dark;
+}
+
+html.light {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-elevated: #FFFFFF;
+  --card-border: rgba(226, 232, 240, 0.9);
+  --muted-text: #64748B;
+  color-scheme: light;
 }
 
 body {
@@ -14,6 +38,7 @@ body {
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
   overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* RTL Layout Special Overrides */
@@ -27,19 +52,28 @@ html[dir="rtl"] .ltr-only {
   text-align: left;
 }
 
-/* Glassmorphism Cards */
+/* Glassmorphism Cards - Theme Adaptive */
 .glass-panel {
-  background: rgba(17, 24, 39, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--card-border);
 }
 
 .glass-panel-elevated {
-  background: rgba(22, 31, 48, 0.85);
+  background: var(--card-elevated);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15);
+}
+
+html.light .glass-panel {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+html.light .glass-panel-elevated {
+  box-shadow: 0 12px 35px -5px rgba(15, 23, 42, 0.08);
 }
 
 /* Neon glow accents */
@@ -55,6 +89,10 @@ html[dir="rtl"] .ltr-only {
   box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.35);
 }
 
+.glow-blue {
+  box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.35);
+}
+
 /* Modern Industrial Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -62,15 +100,37 @@ html[dir="rtl"] .ltr-only {
 }
 
 ::-webkit-scrollbar-track {
-  background: #090D16;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: #4B5563;
   border-radius: 9999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;
+}
+
+/* Print optimizations for official PDF audit reports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .glass-panel, .glass-panel-elevated {
+    border: 1px solid #CBD5E1 !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+}

@@ -16,6 +16,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ctybhgfawzc
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const getSupabaseBrowserClient = () => supabase;
 
 export async function getOrganizationData(slug: string): Promise<Organization> {
   try {

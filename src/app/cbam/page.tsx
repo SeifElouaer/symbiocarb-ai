@@ -7,6 +7,8 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/i18n/use-translation';
+import { SectionHeader } from '@/components/layout/SectionHeader';
+import { AuditReportDialog } from '@/components/cbam/AuditReportDialog';
 import { FALLBACK_ORGANIZATIONS, FALLBACK_EMISSION_FACTORS } from '@/lib/supabase/fallback-data';
 import { calculateCbamSpecificEmbeddedEmissions } from '@/lib/engine/cbam-calculator';
 import { 
@@ -20,7 +22,8 @@ import {
   TrendingUp, 
   Upload, 
   Sparkles,
-  ExternalLink 
+  ExternalLink,
+  Printer
 } from 'lucide-react';
 
 export default function CbamPage() {
@@ -31,6 +34,7 @@ export default function CbamPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [matchedResults, setMatchedResults] = useState(FALLBACK_EMISSION_FACTORS);
+  const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
 
   // Precursor materials for CBAM calculation
   const precursors = [
@@ -81,20 +85,50 @@ export default function CbamPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Module Intelligence Header */}
+      <SectionHeader
+        title={t.cbam.title}
+        badge="Règlement (UE) 2023/956"
+        badgeColor="bg-blue-500/10 text-blue-500 border-blue-500/20"
+        objective="Calculer les Émissions Spécifiques Incorporées (SEE) selon la méthodologie de l'Union Européenne, rapprocher automatiquement les lignes d'achats via RAG vectoriel et générer les livrables d'audit : fichier XML officiel UE et rapport PDF certifié."
+        inputs={[
+          'Lignes de nomenclature BOM (description, code SH 8 chiffres, masse)',
+          'Consommations de combustible Scope 1 (gaz naturel / fioul en kWh ou tonnes)',
+          'Consommations d\'électricité Scope 2 (factures STEG MT avec FE 0.473 kg/kWh)'
+        ]}
+        deliverables={[
+          'SEE certifié en tCO₂e / tonne de produit fini',
+          'Rapprochement vectoriel avec la base ADEME & valeurs par défaut JRC',
+          'Fichier XML homologué conforme au schéma XSD de la Commission Européenne',
+          'Attestation PDF officielle d\'inventaire carbone pour auditeur tiers'
+        ]}
+        regulation="Règlement (UE) 2023/956, Règlement d'exécution (UE) 2023/1773 & Normes ISO 14064-1 / ISO 14067"
+      />
+
+      {/* Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <Globe2 className="h-6 w-6 text-blue-400" />
-            <span>{t.cbam.title}</span>
-          </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            {t.cbam.subtitle} • {org.name_fr}
+          <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+            <span>Déclaration Trimestrielle CBAM</span>
+            <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20 font-mono">
+              Q1 2026
+            </span>
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {org.name_fr} • Code douanier : 7209 16 90
           </p>
         </div>
 
-        {/* 1-Click Export Actions */}
+        {/* 1-Click Export Actions (PDF + XML) */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsPdfDialogOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-slate-800 text-white px-3.5 py-2 text-xs font-bold hover:bg-slate-700 transition-all shadow-md"
+          >
+            <Printer className="h-4 w-4 text-emerald-400" />
+            <span>Imprimer / PDF Officiel</span>
+          </button>
+
           <a
             href="/api/export/cbam-xml"
             download
@@ -250,6 +284,62 @@ export default function CbamPage() {
           </table>
         </div>
       </div>
+
+      {/* Official Audit PDF Dialog */}
+      <AuditReportDialog
+        isOpen={isPdfDialogOpen}
+        onClose={() => setIsPdfDialogOpen(false)}
+        result={cbamResult}
+        entries={[
+          {
+            id: 'bom-01',
+            org_id: org.id,
+            raw_description: 'Bobines acier laminé à froid (Cold-rolled flat steel coils)',
+            quantity: 475000,
+            unit: 'kg',
+            scope: 3,
+            total_tco2e: 1163.75,
+            matched_ef: {
+              id: 'ef-01',
+              code: 'MAT-STEEL-01',
+              name_fr: 'Acier laminé à froid',
+              name_en: 'Cold-rolled flat steel',
+              name_ar: 'فولاذ مدرفل على البارد',
+              category: 'raw_materials',
+              cn_code_8: '7209 16 90',
+              unit: 'kg',
+              ef_kgco2e_per_unit: 2.45,
+              scope: 3,
+              source_authority: 'Base Carbone ADEME / JRC',
+            },
+          },
+          {
+            id: 'bom-02',
+            org_id: org.id,
+            raw_description: 'Profilés aluminium usinés (Extruded aluminum profiles)',
+            quantity: 25000,
+            unit: 'kg',
+            scope: 3,
+            total_tco2e: 230.0,
+            matched_ef: {
+              id: 'ef-02',
+              code: 'MAT-ALU-01',
+              name_fr: 'Profilés aluminium',
+              name_en: 'Extruded aluminum profiles',
+              name_ar: 'مقاطع ألمنيوم مبثوقة',
+              category: 'raw_materials',
+              cn_code_8: '7604 21 00',
+              unit: 'kg',
+              ef_kgco2e_per_unit: 9.2,
+              scope: 3,
+              source_authority: 'European Aluminium / JRC',
+            },
+          },
+        ]}
+        companyName={org.name_fr}
+        quarter="T1 (Q1)"
+        reportingYear={2026}
+      />
     </div>
   );
 }

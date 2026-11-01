@@ -11,6 +11,7 @@ import { FALLBACK_BILLS, FALLBACK_ORGANIZATIONS } from '@/lib/supabase/fallback-
 import { calculateStegMtBill } from '@/lib/engine/steg-tariffs';
 import { solveCosPhiCompensation } from '@/lib/engine/cos-phi-solver';
 import { solveLoadShifting } from '@/lib/engine/load-shifting-lp';
+import { SectionHeader } from '@/components/layout/SectionHeader';
 import { 
   Zap, 
   Sliders, 
@@ -61,16 +62,25 @@ export default function EnergyPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-          <Zap className="h-6 w-6 text-amber-400" />
-          <span>{t.energy.title}</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">
-          {t.energy.subtitle} • {org.name_fr} ({bill.district_steg})
-        </p>
-      </div>
+      {/* Section Intelligence Header */}
+      <SectionHeader
+        title={t.energy.title}
+        badge="Tarif STEG MT & Cos φ"
+        badgeColor="bg-amber-500/10 text-amber-500 border-amber-500/20"
+        objective="Analyser la facture d'électricité Moyenne Tension (MT), dimensionner le banc de condensateurs pour éliminer les pénalités d'énergie réactive et simuler les économies d'effacement de pointe."
+        inputs={[
+          'Puissance souscrite et puissance maximale appelée (kVA)',
+          'Consommations actives en kWh (Jour, Pointe, Soir, Nuit)',
+          'Énergie réactive totale en kVARh et facteur cos φ actuel'
+        ]}
+        deliverables={[
+          'Puissance nominale de compensation Qc (kVAR) calculée',
+          'Vérification du risque de résonance harmonique (189 Hz)',
+          'Économies annuelles directes sur la facture STEG (TND)',
+          'Plan d\'effacement de pointe vers les heures de nuit'
+        ]}
+        regulation="Arrêté Tarifaire STEG MT, Norme CEI 60831, Loi n° 2004-72 & Subventions ANME FTE"
+      />
 
       {/* Grid 1: cos phi Compensation Optimizer */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

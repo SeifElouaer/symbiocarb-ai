@@ -1,36 +1,47 @@
 'use client';
 
 // ==============================================================================
-// AppShell Client Component: Provides i18n Context, Navigation & Floating Drawer
+// AppShell Client Component: Theme, Auth, i18n Context & Global Workspace Layout
 // ==============================================================================
 
-import React, { useState } from 'react';
+import React from 'react';
+import { ThemeProvider } from '@/lib/theme/ThemeProvider';
+import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
 import { I18nProvider } from '@/lib/i18n/use-translation';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
-import { DarjaBotDrawer } from '@/components/telegram/DarjaBotDrawer';
+import { AuthModal } from '@/components/auth/AuthModal';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const [copilotOpen, setCopilotOpen] = useState(false);
+function AppShellInner({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
 
   return (
-    <I18nProvider>
-      <div className="flex min-h-screen flex-col bg-[#090D16]">
-        {/* Top Global Navigation Bar */}
-        <Navbar onOpenCopilot={() => setCopilotOpen(true)} />
+    <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors">
+      {/* Top Global Navigation Bar */}
+      <Navbar />
 
-        {/* Workspace Body: Sidebar + Main Content */}
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar onOpenCopilot={() => setCopilotOpen(true)} />
-          <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
-            <div className="mx-auto max-w-7xl">{children}</div>
-          </main>
-        </div>
-
-        {/* Floating Mobile Simulator Drawer (DarjaBot) */}
-        <DarjaBotDrawer isOpen={copilotOpen} onClose={() => setCopilotOpen(false)} />
+      {/* Workspace Body: Sidebar (when authenticated or browsing modules) + Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {isAuthenticated && <Sidebar />}
+        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
+          <div className="mx-auto max-w-7xl">{children}</div>
+        </main>
       </div>
-    </I18nProvider>
+
+      {/* Google OAuth & Email Auth Modal */}
+      <AuthModal />
+    </div>
   );
 }
 
+export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <I18nProvider>
+          <AppShellInner>{children}</AppShellInner>
+        </I18nProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}

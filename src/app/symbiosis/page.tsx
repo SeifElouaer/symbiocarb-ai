@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/i18n/use-translation';
+import { SectionHeader } from '@/components/layout/SectionHeader';
 import { FALLBACK_ORGANIZATIONS, FALLBACK_WASTE_LISTINGS, FALLBACK_SYMBIO_MATCHES } from '@/lib/supabase/fallback-data';
 import { simulateBioClairaValorization } from '@/lib/engine/bioclaira-simulator';
 import { 
@@ -54,6 +55,25 @@ export default function SymbiosisPage() {
 
   return (
     <div className="space-y-6">
+      {/* Section Intelligence Header */}
+      <SectionHeader
+        title={t.symbiosis.title}
+        badge="BioClaira Thermochimie"
+        badgeColor="bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+        objective="Simuler la pyrolyse contrôlée et l'activation des sous-produits agro-industriels tunisiens (noyaux de dattes, grignons d'olive) pour produire du charbon actif à haute valeur marchande et cartographier les flux de symbiose entre zones industrielles."
+        inputs={[
+          'Gisement de biomasse disponible (tonnes brutes/an)',
+          'Taux d\'humidité et température de consigne du réacteur (°C)',
+          'Agent d\'activation (vapeur d\'eau, H₃PO₄ ou KOH)'
+        ]}
+        deliverables={[
+          'Rendement massique en charbon actif et bio-huile valorisable',
+          'Surface spécifique BET estimée (m²/g) et indice d\'iode',
+          'Rentabilité financière annuelle nette générée (TND/an)',
+          'Bilan carbone net de séquestration et de méthane évité (tCO₂e)'
+        ]}
+        regulation="Certification Biochar EBC, Mécanisme de Crédits Carbone Volontaires (VCS) & Cadre Déchets ANPE"
+      />
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
