@@ -2,7 +2,7 @@
 
 // ==============================================================================
 // SymbioCarb AI - Auth Modal Component
-// Modern Glassmorphism modal with Google OAuth, Email/Password, & Demo Factory Mode
+// Modern Obsidian Precision modal with Google OAuth, Email/Password, & Demo Factory Mode
 // ==============================================================================
 
 import React, { useState } from 'react';
@@ -69,15 +69,15 @@ export function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-md rounded-2xl glass-panel-elevated p-6 sm:p-8 shadow-2xl border border-white/15 dark:border-white/10"
+        className="relative w-full max-w-md rounded-2xl glass-panel-elevated p-6 sm:p-8 shadow-2xl border border-white/[0.12] bg-[#0A0F1D]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={closeAuthModal}
-          className="absolute top-4 end-4 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="btn-tactile absolute top-4 end-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
           aria-label="Fermer"
         >
           <X className="h-5 w-5" />
@@ -85,13 +85,13 @@ export function AuthModal() {
 
         {/* Modal Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg glow-emerald mb-3">
-            <ShieldCheck className="h-6 w-6 text-black stroke-[2.5]" />
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-3 shadow-inner">
+            <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">
+          <h2 className="text-xl font-bold tracking-tight text-white font-sans">
             {tab === 'signin' ? 'Accès Plateforme Industrielle' : 'Créer un Compte Usine'}
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
             {locale === 'ar-TN' 
               ? 'تسجيل الدخول لمنظومة الحسابات الطاقية والكربونية' 
               : 'Connectez-vous pour piloter vos déclarations CBAM et optimiser vos tarifs STEG.'}
@@ -103,7 +103,7 @@ export function AuthModal() {
           onClick={handleGoogleSignIn}
           disabled={loading}
           type="button"
-          className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 py-3 px-4 text-sm font-semibold text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition-all shadow-sm group"
+          className="btn-tactile w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.1] bg-white/[0.04] py-3 px-4 text-sm font-semibold text-white hover:bg-white/[0.08] transition-all shadow-sm group"
         >
           <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
             <path
@@ -128,30 +128,30 @@ export function AuthModal() {
 
         <div className="relative my-5 text-center">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200 dark:border-white/10" />
+            <div className="w-full border-t border-white/[0.08]" />
           </div>
-          <span className="relative bg-card px-3 text-[11px] uppercase tracking-wider text-muted-foreground">
+          <span className="relative bg-[#0A0F1D] px-3 text-[10px] font-mono uppercase tracking-wider text-slate-400">
             ou par e-mail professionnel
           </span>
         </div>
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Form Tabs */}
-        <div className="flex rounded-lg bg-slate-100 dark:bg-black/30 p-1 mb-4 text-xs font-semibold">
+        <div className="flex rounded-xl bg-black/40 border border-white/[0.06] p-1 mb-4 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setTab('signin')}
-            className={`flex-1 py-1.5 rounded-md transition-all ${
+            className={`btn-tactile flex-1 py-1.5 rounded-lg transition-all ${
               tab === 'signin'
-                ? 'bg-white dark:bg-white/10 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-emerald-500 text-black font-bold shadow-sm'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Se Connecter
@@ -159,10 +159,10 @@ export function AuthModal() {
           <button
             type="button"
             onClick={() => setTab('signup')}
-            className={`flex-1 py-1.5 rounded-md transition-all ${
+            className={`btn-tactile flex-1 py-1.5 rounded-lg transition-all ${
               tab === 'signup'
-                ? 'bg-white dark:bg-white/10 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-emerald-500 text-black font-bold shadow-sm'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Créer un Compte
@@ -173,53 +173,53 @@ export function AuthModal() {
         <form onSubmit={handleEmailSubmit} className="space-y-3">
           {tab === 'signup' && (
             <div>
-              <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+              <label className="block text-[11px] font-medium text-slate-300 mb-1">
                 Nom complet & Fonction
               </label>
               <div className="relative">
-                <User className="absolute start-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <User className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
                   required
                   placeholder="ex: Ing. Seif Ben Mahmoud"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white/50 dark:bg-black/20 ps-9 pe-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+                  className="w-full rounded-xl border border-white/[0.08] bg-black/30 ps-9 pe-3 py-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-              E-mail de l'usine
+            <label className="block text-[11px] font-medium text-slate-300 mb-1">
+              E-mail de l&apos;usine
             </label>
             <div className="relative">
-              <Mail className="absolute start-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Mail className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 type="email"
                 required
                 placeholder="direction@usine-export.tn"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white/50 dark:bg-black/20 ps-9 pe-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+                className="w-full rounded-xl border border-white/[0.08] bg-black/30 ps-9 pe-3 py-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+            <label className="block text-[11px] font-medium text-slate-300 mb-1">
               Mot de passe
             </label>
             <div className="relative">
-              <Lock className="absolute start-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Lock className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white/50 dark:bg-black/20 ps-9 pe-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+                className="w-full rounded-xl border border-white/[0.08] bg-black/30 ps-9 pe-3 py-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
           </div>
@@ -227,7 +227,7 @@ export function AuthModal() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-xs font-bold text-black hover:opacity-95 transition-all shadow-md glow-emerald flex items-center justify-center gap-1.5"
+            className="btn-tactile w-full mt-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 py-2.5 text-xs font-bold text-black transition-all shadow-md flex items-center justify-center gap-1.5"
           >
             <span>{tab === 'signin' ? 'Accéder au Cockpit' : 'Créer mon Accès Usine'}</span>
             <ArrowRight className="h-3.5 w-3.5" />
@@ -235,36 +235,36 @@ export function AuthModal() {
         </form>
 
         {/* 1-Click Instant Demo Persona Selector */}
-        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-white/10">
+        <div className="mt-6 pt-5 border-t border-white/[0.08]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
-              Accès Immédiat Démo
+              Accès Immédiat Pilotes
             </span>
-            <span className="text-[10px] text-muted-foreground font-mono">1-Click Test</span>
+            <span className="text-[10px] text-slate-400 font-mono">1-Click Test</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => signInAsDemo('benarous')}
-              className="p-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-emerald-500/40 text-start transition-all"
+              className="btn-tactile p-2 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:border-emerald-500/40 text-start transition-all"
             >
-              <div className="text-[10px] font-bold text-foreground">Ben Arous</div>
-              <div className="text-[9px] text-muted-foreground truncate">Mécanique & CBAM</div>
+              <div className="text-[10px] font-bold text-white">Ben Arous</div>
+              <div className="text-[9px] text-slate-400 truncate">Mécanique & CBAM</div>
             </button>
             <button
               onClick={() => signInAsDemo('tozeur')}
-              className="p-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-emerald-500/40 text-start transition-all"
+              className="btn-tactile p-2 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:border-emerald-500/40 text-start transition-all"
             >
-              <div className="text-[10px] font-bold text-foreground">Tozeur</div>
-              <div className="text-[9px] text-muted-foreground truncate">Dattes & BioClaira</div>
+              <div className="text-[10px] font-bold text-white">Tozeur</div>
+              <div className="text-[9px] text-slate-400 truncate">Dattes & BioClaira</div>
             </button>
             <button
               onClick={() => signInAsDemo('sfax')}
-              className="p-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-emerald-500/40 text-start transition-all"
+              className="btn-tactile p-2 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:border-emerald-500/40 text-start transition-all"
             >
-              <div className="text-[10px] font-bold text-foreground">Sfax</div>
-              <div className="text-[9px] text-muted-foreground truncate">Huilerie & STEG MT</div>
+              <div className="text-[10px] font-bold text-white">Sfax</div>
+              <div className="text-[9px] text-slate-400 truncate">Huilerie & STEG MT</div>
             </button>
           </div>
         </div>
@@ -272,4 +272,3 @@ export function AuthModal() {
     </div>
   );
 }
-

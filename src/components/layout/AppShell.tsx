@@ -18,7 +18,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors">
+    <div className="flex min-h-screen flex-col bg-background bg-tech-pattern text-foreground transition-colors">
       {/* Top Global Navigation Bar */}
       <Navbar />
 
@@ -26,7 +26,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 overflow-hidden">
         {isAuthenticated && <Sidebar />}
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
-          <div className="mx-auto max-w-7xl">{children}</div>
+          <div className="mx-auto max-w-7xl animate-in fade-in duration-200">{children}</div>
         </main>
       </div>
 

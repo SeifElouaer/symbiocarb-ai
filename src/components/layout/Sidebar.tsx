@@ -2,7 +2,7 @@
 
 // ==============================================================================
 // Industrial Responsive Sidebar with Dynamic RTL Layout Alignment
-// Clean enterprise SaaS navigation with Zero Telegram Clutter
+// Enhanced with Taste Skill "Navigation recedes" principle & Obsidian styling
 // ==============================================================================
 
 import React from 'react';
@@ -18,7 +18,9 @@ import {
   FileSearch, 
   BookOpen, 
   MapPin, 
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle,
+  TrendingDown
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -38,7 +40,7 @@ export function Sidebar() {
       icon: Sparkles,
       active: pathname.startsWith('/audit'),
       badge: '5 Étapes',
-      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-bold',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     },
     {
       name: t.nav.energy,
@@ -46,7 +48,7 @@ export function Sidebar() {
       icon: Zap,
       active: pathname.startsWith('/energy'),
       badge: 'STEG MT',
-      badgeColor: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+      badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     },
     {
       name: t.nav.cbam,
@@ -54,7 +56,7 @@ export function Sidebar() {
       icon: Globe2,
       active: pathname.startsWith('/cbam'),
       badge: 'CBAM UE',
-      badgeColor: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+      badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     },
     {
       name: t.nav.symbiosis,
@@ -62,7 +64,7 @@ export function Sidebar() {
       icon: Recycle,
       active: pathname.startsWith('/symbiosis'),
       badge: 'BioClaira',
-      badgeColor: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     },
     {
       name: t.nav.ocr,
@@ -70,7 +72,7 @@ export function Sidebar() {
       icon: FileSearch,
       active: pathname.startsWith('/ocr'),
       badge: 'Gemini 2.5',
-      badgeColor: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+      badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
     },
     {
       name: 'Centre Réglementaire',
@@ -78,41 +80,43 @@ export function Sidebar() {
       icon: BookOpen,
       active: pathname.startsWith('/blog'),
       badge: 'ISO / UE',
-      badgeColor: 'bg-teal-500/10 text-teal-500 border-teal-500/20',
+      badgeColor: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
     },
   ];
 
   const personaDetails = t.personas[persona];
 
   return (
-    <aside className="w-64 shrink-0 border-e border-card-border bg-background flex flex-col justify-between py-6 px-3 transition-colors">
+    <aside className="w-64 shrink-0 border-e border-white/[0.08] bg-[#080C14] flex flex-col justify-between py-5 px-3 transition-colors">
       {/* Navigation Links */}
-      <div className="space-y-1.5">
-        <div className="px-3 pb-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          {locale === 'ar-TN' ? 'الوحدات الهندسية' : 'Engineering Modules'}
+      <div className="space-y-1">
+        <div className="px-3 pb-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+          <span>{locale === 'ar-TN' ? 'الوحدات الهندسية' : 'Modules Métier'}</span>
+          <span className="font-mono text-[9px] text-emerald-500 font-semibold">ISO 50001</span>
         </div>
+
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all ${
+              className={`group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-all ${
                 item.active
-                  ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 shadow-sm'
-                  : 'text-muted-foreground hover:bg-card hover:text-foreground'
+                  ? 'bg-white/[0.07] text-white border-s-2 border-emerald-400 font-semibold shadow-sm'
+                  : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
               }`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <Icon
                   className={`h-4 w-4 transition-colors ${
-                    item.active ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-foreground'
+                    item.active ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-200'
                   }`}
                 />
-                <span>{item.name}</span>
+                <span className="tracking-tight">{item.name}</span>
               </div>
               {item.badge && (
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${item.badgeColor}`}>
+                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${item.badgeColor}`}>
                   {item.badge}
                 </span>
               )}
@@ -121,31 +125,47 @@ export function Sidebar() {
         })}
       </div>
 
-      {/* Active Persona Facility Card */}
-      <div className={`rounded-xl border p-3.5 space-y-2 ${
-        persona === 'custom'
-          ? 'border-emerald-500/40 bg-emerald-950/20'
-          : 'border-card-border bg-card'
-      }`}>
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1 font-medium">
-            <ShieldCheck className={`h-3.5 w-3.5 ${persona === 'custom' ? 'text-emerald-400' : 'text-amber-400'}`} />
-            {persona === 'custom' ? 'Usine Client Active' : t.nav.activePersona}
-          </span>
-          <span className={`font-mono text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
-            persona === 'custom'
-              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-              : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-          }`}>
-            {persona === 'custom' ? 'Mode Réel' : 'Exemple Démo'}
-          </span>
+      {/* Industrial Facility Card & Telemetry Status */}
+      <div className="space-y-2.5 pt-4">
+        {/* Active Facility Card */}
+        <div className={`rounded-xl border p-3 space-y-2 ${
+          persona === 'custom'
+            ? 'border-emerald-500/30 bg-emerald-950/20'
+            : 'border-white/[0.07] bg-[#0E1526]/70'
+        }`}>
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <span className="flex items-center gap-1 font-medium">
+              <ShieldCheck className={`h-3.5 w-3.5 ${persona === 'custom' ? 'text-emerald-400' : 'text-amber-400'}`} />
+              <span className="text-[10px] uppercase font-bold tracking-wider">
+                {persona === 'custom' ? 'Usine Active' : 'Usine Pilote'}
+              </span>
+            </span>
+            <span className={`font-mono text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
+              persona === 'custom'
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+            }`}>
+              {persona === 'custom' ? 'Réel' : 'Démo'}
+            </span>
+          </div>
+
+          <div className="text-xs font-bold text-white line-clamp-1">
+            {personaDetails?.name}
+          </div>
+
+          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+            <span className="truncate">{personaDetails?.location}</span>
+          </div>
         </div>
-        <div className="text-xs font-bold text-foreground line-clamp-1">
-          {personaDetails?.name}
-        </div>
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="truncate">{personaDetails?.location}</span>
+
+        {/* Live Grid Benchmark Pill */}
+        <div className="px-3 py-2 rounded-lg bg-black/40 border border-white/[0.05] text-[10px] text-slate-400 flex items-center justify-between font-mono">
+          <span className="flex items-center gap-1 text-emerald-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            STEG: 0.473
+          </span>
+          <span>ETS: ~85 €/t</span>
         </div>
       </div>
     </aside>
