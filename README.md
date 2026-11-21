@@ -229,26 +229,6 @@ npm run build
 
 ---
 
-## 🔑 Variables d'Environnement Requises
-
-Dans votre fichier `.env.local` :
-
-```env
-# Supabase Database & Auth (pgvector)
-NEXT_PUBLIC_SUPABASE_URL="https://ctybhgfawzchcqzboiau.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-# Google Gemini API (Vision Multimodale & Document AI)
-GEMINI_API_KEY="AIzaSy..."
-
-# Paramètres Applicatifs
-NEXT_PUBLIC_APP_URL="https://symbiocarb.vercel.app"
-NEXT_PUBLIC_DEFAULT_LOCALE="fr"
-```
-
----
-
 ## 🌐 Déploiement en Production
 
 La plateforme est déployée et mise à jour en continu sur le cloud Vercel :
