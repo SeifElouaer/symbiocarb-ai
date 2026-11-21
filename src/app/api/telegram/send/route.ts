@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
       message, 
       alertType, 
       locale = 'ar-TN', 
-      persona = 'benarous',
       chatId 
     } = body;
 

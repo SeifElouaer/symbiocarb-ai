@@ -104,8 +104,8 @@ export function AuditReportDialog({
             <div className="space-y-1">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Établissement Déclarant</div>
               <div className="font-bold text-sm text-slate-900">{companyName}</div>
-              <div className="text-slate-600">Zone Industrielle Ben Arous / Sfax, Tunisie</div>
-              <div className="text-slate-500 font-mono text-[11px]">Identifiant Douanier : TN-EXPORT-8412-90</div>
+              <div className="text-slate-600">Site Industriel, Tunisie</div>
+              <div className="text-slate-500 font-mono text-[11px]">Code Douanier CN : {result.cnCode8}</div>
             </div>
 
             <div className="space-y-1 border-s border-slate-200 ps-4">

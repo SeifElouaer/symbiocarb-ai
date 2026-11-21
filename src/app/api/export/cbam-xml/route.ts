@@ -1,13 +1,31 @@
 // ==============================================================================
 // Official European Commission EU CBAM XML Communication Generator
-// Implements Regulation (EU) 2023/956 & Implementing Regulation (EU) 2023/1773
+// Dynamically builds XML from factory parameters (no hardcoded demo company).
 // ==============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
 
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const orgSlug = url.searchParams.get('org') || 'benarous';
+  const company = escapeXml(url.searchParams.get('company') || 'Entreprise Non Configuree');
+  const governorate = escapeXml(url.searchParams.get('governorate') || 'Tunisie');
+  const zone = escapeXml(url.searchParams.get('zone') || 'Site Industriel');
+  const cnCode = escapeXml((url.searchParams.get('cnCode') || '00000000').replace(/\s+/g, ''));
+  const product = escapeXml(url.searchParams.get('product') || 'Produit Industriel');
+  const productionTons = Number(url.searchParams.get('productionTons') || 0);
+  const scope1 = Number(url.searchParams.get('scope1') || 0);
+  const scope2 = Number(url.searchParams.get('scope2') || 0);
+  const scope3 = Number(url.searchParams.get('scope3') || 0);
+  const see = Number(url.searchParams.get('see') || 0);
 
   const date = new Date().toISOString().split('T')[0];
 
@@ -16,74 +34,46 @@ export async function GET(req: NextRequest) {
   <Header>
     <MessageId>CBAM-TN-${Date.now()}</MessageId>
     <Timestamp>${new Date().toISOString()}</Timestamp>
-    <ReportingPeriod>2026-Q3</ReportingPeriod>
+    <ReportingYear>${new Date().getFullYear()}</ReportingYear>
     <DeclarantType>OPERATOR</DeclarantType>
   </Header>
-  
+
   <Installation>
-    <InstallationId>TN-IND-BENAROUS-042</InstallationId>
-    <InstallationName>Tunisie Usinage &amp; Composants Mecaniques</InstallationName>
+    <InstallationName>${company}</InstallationName>
     <CountryCode>TN</CountryCode>
-    <Governorate>Ben Arous</Governorate>
-    <IndustrialZone>Zone Industrielle El Mghira</IndustrialZone>
-    <Coordinates>
-      <Latitude>36.7214</Latitude>
-      <Longitude>10.2285</Longitude>
-    </Coordinates>
-    <EconomicActivityNACE>C.25.62 - Machining</EconomicActivityNACE>
+    <Governorate>${governorate}</Governorate>
+    <IndustrialZone>${zone}</IndustrialZone>
     <VerificationStatus>PRE_AUDIT_INTERNAL_DRAFT</VerificationStatus>
     <VerifierAuthority>
-      <AccreditationStatus>PENDING_THIRD_PARTY_AUDIT</AccreditationStatus>
-      <AccreditationStandard>ISO 14065:2020 / Commission Implementing Regulation (EU) 2018/2067</AccreditationStandard>
-      <AccreditedBodyId>DAP-ACCREDITED-ISO14065-TN-PRE</AccreditedBodyId>
-      <LegalDisclaimer>Document préparatoire d'audit interne selon l'Annexe IV du Règlement (UE) 2023/956. Doit être audité par un vérificateur accrédité avant soumission au Registre Transitoire TAXUD.</LegalDisclaimer>
+      <AccreditationStandard>ISO 14065:2020 / Regulation (EU) 2023/956</AccreditationStandard>
+      <LegalDisclaimer>Document préparatoire généré à partir des données déclarées par l'entreprise. Doit être vérifié par un organisme accrédité avant soumission au Registre TAXUD.</LegalDisclaimer>
     </VerifierAuthority>
-    <AuditIntegrityHash>SHA256-TN-BENAROUS-2026-CBAM-VALIDATED</AuditIntegrityHash>
   </Installation>
 
   <ProductionProcesses>
-    <Process id="PROC-STEEL-MACHINING">
-      <ProcessName>Precision CNC Machining &amp; Cold Forming</ProcessName>
-      <ActivityLevel unit="tonnes">450.00</ActivityLevel>
-      
+    <Process id="PROC-MAIN">
+      <ProcessName>${product}</ProcessName>
+      <ActivityLevel unit="tonnes">${productionTons.toFixed(2)}</ActivityLevel>
       <DirectEmissionsScope1>
-        <FuelType>Natural Gas STEG</FuelType>
-        <AmountConsumed unit="MWh">240.50</AmountConsumed>
-        <SpecificEmissionFactor unit="tCO2e/MWh">0.202</SpecificEmissionFactor>
-        <TotalDirectEmissions unit="tCO2e">48.58</TotalDirectEmissions>
+        <TotalDirectEmissions unit="tCO2e">${scope1.toFixed(2)}</TotalDirectEmissions>
       </DirectEmissionsScope1>
-
       <IndirectEmissionsScope2>
-        <ElectricitySource>STEG National Grid Medium Voltage (Tunisia)</ElectricitySource>
-        <ElectricityConsumed unit="MWh">134.00</ElectricityConsumed>
+        <ElectricitySource>STEG National Grid (Tunisia)</ElectricitySource>
         <GridEmissionFactor unit="tCO2e/MWh">0.473</GridEmissionFactor>
-        <TotalIndirectEmissions unit="tCO2e">63.38</TotalIndirectEmissions>
+        <TotalIndirectEmissions unit="tCO2e">${scope2.toFixed(2)}</TotalIndirectEmissions>
       </IndirectEmissionsScope2>
-
       <PrecursorsScope3>
-        <Precursor>
-          <Name>Cold-rolled flat steel coils</Name>
-          <CNCode>72091690</CNCode>
-          <QuantityConsumed unit="tonnes">475.00</QuantityConsumed>
-          <EmbeddedEmissionFactor unit="tCO2e/tonne">2.450</EmbeddedEmissionFactor>
-          <PrecursorEmissions unit="tCO2e">1163.75</PrecursorEmissions>
-        </Precursor>
+        <TotalPrecursorEmissions unit="tCO2e">${scope3.toFixed(2)}</TotalPrecursorEmissions>
       </PrecursorsScope3>
     </Process>
   </ProductionProcesses>
 
   <AggregatedGoodsExported>
     <GoodsItem>
-      <CNCode>72091690</CNCode>
-      <GoodsDescription>Cold-rolled steel coils precision cut and machined</GoodsDescription>
-      <ExportQuantity unit="tonnes">450.00</ExportQuantity>
-      <SpecificEmbeddedEmissions unit="tCO2e/tonne">2.835</SpecificEmbeddedEmissions>
-      <DirectEmbedded unit="tCO2e/tonne">0.108</DirectEmbedded>
-      <IndirectEmbedded unit="tCO2e/tonne">0.141</IndirectEmbedded>
-      <PrecursorEmbedded unit="tCO2e/tonne">2.586</PrecursorEmbedded>
-      <CarbonPricePaidInCountryOfOrigin currency="TND">0.00</CarbonPricePaidInCountryOfOrigin>
-      <EUEtsBenchmark unit="tCO2e/tonne">1.420</EUEtsBenchmark>
-      <BenchmarkGap unit="tCO2e/tonne">+1.415</BenchmarkGap>
+      <CNCode>${cnCode}</CNCode>
+      <GoodsDescription>${product}</GoodsDescription>
+      <ExportQuantity unit="tonnes">${productionTons.toFixed(2)}</ExportQuantity>
+      <SpecificEmbeddedEmissions unit="tCO2e/tonne">${see.toFixed(3)}</SpecificEmbeddedEmissions>
     </GoodsItem>
   </AggregatedGoodsExported>
 </CBAMCommunication>`;
@@ -92,8 +82,7 @@ export async function GET(req: NextRequest) {
     status: 200,
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Content-Disposition': `attachment; filename="CBAM_Declaration_Tunisia_${orgSlug}_${date}.xml"`,
+      'Content-Disposition': `attachment; filename="CBAM_Declaration_${date}.xml"`,
     },
   });
 }
-

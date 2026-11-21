@@ -1,8 +1,8 @@
 'use client';
 
 // ==============================================================================
-// SymbioCarb AI - Industrial Audit & Decarbonization Context
-// Replaces a 6-month consulting audit with an automated, 5-step guided workflow
+// SymbioCarb AI - Industrial Factory Data & Deterministic Calculation Context
+// Strict zero-state initialization: no demo personas, no fake defaults, no NaN.
 // ==============================================================================
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -10,10 +10,45 @@ import { Sector, StegTariffType } from '@/types';
 import { calculateStegMtBill } from '@/lib/engine/steg-tariffs';
 import { solveCosPhiCompensation } from '@/lib/engine/cos-phi-solver';
 import { simulateBioClairaValorization } from '@/lib/engine/bioclaira-simulator';
-import { FALLBACK_ORGANIZATIONS, FALLBACK_BILLS } from '@/lib/supabase/fallback-data';
+import { useAuth } from '@/lib/auth/auth-context';
+
+export interface MonthlyBillEntry {
+  id: string;
+  month: number;
+  year: number;
+  districtSteg?: string;
+  tariffRegime: StegTariffType;
+  pSouscriteKva: number;
+  pMaxAppeleeKva: number;
+  kwhJour: number;
+  kwhPointe: number;
+  kwhSoir: number;
+  kwhNuit: number;
+  kvarhTotal: number;
+  cosPhi: number;
+  reactivePenaltyTnd: number;
+  powerOverrunPenaltyTnd: number;
+  totalTtcTnd: number;
+  source: 'manual' | 'ocr' | 'csv';
+}
+
+export interface BomMaterialEntry {
+  id: string;
+  name: string;
+  cnCode8: string;
+  quantityTons: number;
+  efTco2ePerTon: number;
+}
+
+export type WasteStreamType =
+  | 'olive_pomace'
+  | 'date_pits'
+  | 'olive_mill_wastewater'
+  | 'metal_scrap'
+  | 'plastic_scrap';
 
 export interface AuditWizardData {
-  // Step 1: Profil Entreprise & Périmètre Exportateur
+  // 1. Identité & Profil Usine
   companyName: string;
   fiscalId: string;
   governorate: string;
@@ -26,8 +61,9 @@ export interface AuditWizardData {
   annualExportTons: number;
   annualProductionTons: number;
 
-  // Step 2: Énergie & Facture STEG MT
+  // 2. Énergie & Facture STEG MT (Période active / moyenne mensuelle)
   tariffRegime: StegTariffType;
+  districtSteg: string;
   pSouscriteKva: number;
   pMaxAppeleeKva: number;
   kwhJour: number;
@@ -40,7 +76,7 @@ export interface AuditWizardData {
   reactivePenaltyTnd: number;
   powerOverrunPenaltyTnd: number;
 
-  // Step 3: Combustibles & Intrants Décarbonation (Scope 1 & 3)
+  // 3. Combustibles & Intrants CBAM (Scope 1 & Scope 3)
   naturalGasM3: number;
   heavyFuelTons: number;
   dieselLiters: number;
@@ -48,105 +84,74 @@ export interface AuditWizardData {
   aluminumTons: number;
   scrapTons: number;
 
-  // Step 4: Déchets, Sous-produits & Économie Circulaire (BioClaira)
-  wasteType: 'olive_pomace' | 'date_pits' | 'olive_mill_wastewater' | 'metal_scrap' | 'plastic_scrap';
+  // 4. BioClaira (Audit Déchet Séparé - Pack Gold)
+  wasteType: WasteStreamType;
   wasteMonthlyTons: number;
   disposalCostTndPerTon: number;
   moisturePercent: number;
+
+  // 5. Historique multi-périodes & Nomenclature BOM
+  monthlyBills: MonthlyBillEntry[];
+  bomMaterials: BomMaterialEntry[];
 }
 
 export const INITIAL_AUDIT_DATA: AuditWizardData = {
-  companyName: 'Mon Usine Industrielle SA',
-  fiscalId: '1489201/A/M/000',
-  governorate: 'Ben Arous',
-  industrialZone: 'Zone Industrielle Z.I. Ben Arous',
+  companyName: '',
+  fiscalId: '',
+  governorate: '',
+  industrialZone: '',
   sector: 'metal_mechanics',
-  contactEmail: 'direction.technique@mon-entreprise.tn',
-  contactPhone: '+216 71 390 000',
-  exportCnCode: '7207 11 14',
-  exportProductName: 'Barres et billettes en aciers spéciaux usinés',
-  annualExportTons: 1200,
-  annualProductionTons: 1600,
+  contactEmail: '',
+  contactPhone: '',
+  exportCnCode: '',
+  exportProductName: '',
+  annualExportTons: 0,
+  annualProductionTons: 0,
 
   tariffRegime: 'MT_POSTES_HORAIRES',
-  pSouscriteKva: 450,
-  pMaxAppeleeKva: 490,
-  kwhJour: 52000,
-  kwhPointe: 24000,
-  kwhSoir: 18000,
-  kwhNuit: 28000,
-  kvarhTotal: 65000,
-  cosPhi: 0.81,
-  monthlyBillTnd: 34500,
-  reactivePenaltyTnd: 850,
-  powerOverrunPenaltyTnd: 980,
+  districtSteg: '',
+  pSouscriteKva: 0,
+  pMaxAppeleeKva: 0,
+  kwhJour: 0,
+  kwhPointe: 0,
+  kwhSoir: 0,
+  kwhNuit: 0,
+  kvarhTotal: 0,
+  cosPhi: 0,
+  monthlyBillTnd: 0,
+  reactivePenaltyTnd: 0,
+  powerOverrunPenaltyTnd: 0,
 
-  naturalGasM3: 14500,
-  heavyFuelTons: 8.5,
-  dieselLiters: 2400,
-  steelTons: 1450,
-  aluminumTons: 80,
-  scrapTons: 120,
+  naturalGasM3: 0,
+  heavyFuelTons: 0,
+  dieselLiters: 0,
+  steelTons: 0,
+  aluminumTons: 0,
+  scrapTons: 0,
 
-  wasteType: 'metal_scrap',
-  wasteMonthlyTons: 25,
-  disposalCostTndPerTon: 80,
-  moisturePercent: 5,
-};
+  wasteType: 'olive_pomace',
+  wasteMonthlyTons: 0,
+  disposalCostTndPerTon: 0,
+  moisturePercent: 0,
 
-// Sector Presets (ANME & CETIC Verified Averages)
-export const SECTOR_PRESETS: Record<string, Partial<AuditWizardData>> = {
-  metal: {
-    sector: 'metal_mechanics',
-    exportCnCode: '7207 11 14',
-    exportProductName: 'Pièces mécaniques et profilés usinés',
-    pSouscriteKva: 500,
-    pMaxAppeleeKva: 540,
-    kwhJour: 60000,
-    kwhPointe: 28000,
-    kwhSoir: 20000,
-    kwhNuit: 32000,
-    cosPhi: 0.82,
-    naturalGasM3: 18000,
-    steelTons: 1800,
-    wasteType: 'metal_scrap',
-    wasteMonthlyTons: 35,
-  },
-  olive: {
-    sector: 'olive_oil',
-    exportCnCode: '1509 20 00',
-    exportProductName: 'Huile d\'olive extra vierge conditionnée',
-    pSouscriteKva: 350,
-    pMaxAppeleeKva: 380,
-    kwhJour: 42000,
-    kwhPointe: 22000,
-    kwhSoir: 15000,
-    kwhNuit: 21000,
-    cosPhi: 0.84,
-    naturalGasM3: 5000,
-    wasteType: 'olive_pomace',
-    wasteMonthlyTons: 60,
-    moisturePercent: 45,
-  },
-  dates: {
-    sector: 'date_processing',
-    exportCnCode: '0804 10 00',
-    exportProductName: 'Dattes Deglet Nour branchées et dénoyautées',
-    pSouscriteKva: 300,
-    pMaxAppeleeKva: 320,
-    kwhJour: 55000,
-    kwhPointe: 16000,
-    kwhSoir: 18000,
-    kwhNuit: 31000,
-    cosPhi: 0.89,
-    naturalGasM3: 3500,
-    wasteType: 'date_pits',
-    wasteMonthlyTons: 40,
-    moisturePercent: 12,
-  },
+  monthlyBills: [],
+  bomMaterials: [],
 };
 
 export interface AuditResults {
+  hasEnergyData: boolean;
+  hasCarbonData: boolean;
+  hasWasteData: boolean;
+  hasAnyData: boolean;
+
+  // Energy totals & shares
+  kwhTotal: number;
+  pctJour: number;
+  pctPointe: number;
+  pctSoir: number;
+  pctNuit: number;
+  estimatedMonthlyStegTnd: number;
+
   // Carbon & CBAM
   scope1Tco2e: number;
   scope2Tco2e: number;
@@ -156,31 +161,37 @@ export interface AuditResults {
   cbamTaxExposureEur: number;
   cbamTaxExposureTnd: number;
 
-  // Energy & STEG
+  // STEG Optimization
   cosPhiCurrent: number;
   requiredCapacitorKvar: number;
   annualReactivePenaltySavingsTnd: number;
   annualPowerOverrunSavingsTnd: number;
   totalAnnualStegSavingsTnd: number;
-  anmeFteSubsidyTnd: number; // 70% of energy audit + CAPEX bonus
+  anmeFteSubsidyTnd: number;
 
-  // BioClaira Symbiosis
+  // BioClaira (Gold Option)
   biocharYieldTonsPerYear: number;
   co2SequestrationTco2ePerYear: number;
   annualCircularValorizationTnd: number;
 
-  // Global Compliance
+  // Global Readiness
   readinessScorePercent: number;
 }
 
 interface AuditContextType {
   auditData: AuditWizardData;
   updateAuditData: (updates: Partial<AuditWizardData>) => void;
-  applyPreset: (presetKey: 'metal' | 'olive' | 'dates') => void;
+  addMonthlyBill: (bill: Omit<MonthlyBillEntry, 'id'>) => void;
+  importMonthlyBills: (bills: Omit<MonthlyBillEntry, 'id'>[]) => void;
+  removeMonthlyBill: (id: string) => void;
+  addBomMaterial: (material: Omit<BomMaterialEntry, 'id'>) => void;
+  removeBomMaterial: (id: string) => void;
+  resetAuditData: () => void;
   results: AuditResults;
-  isWizardOpen: boolean;
-  openWizard: () => void;
-  closeWizard: () => void;
+  isAddDataOpen: boolean;
+  addDataInitialTab: 'steg' | 'cbam' | 'profile';
+  openAddDataModal: (tab?: 'steg' | 'cbam' | 'profile') => void;
+  closeAddDataModal: () => void;
   saveAuditToProfile: () => void;
   lastSavedAt: string | null;
 }
@@ -188,141 +199,329 @@ interface AuditContextType {
 const AuditContext = createContext<AuditContextType | null>(null);
 
 export function AuditProvider({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated } = useAuth();
   const [auditData, setAuditData] = useState<AuditWizardData>(INITIAL_AUDIT_DATA);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isAddDataOpen, setIsAddDataOpen] = useState(false);
+  const [addDataInitialTab, setAddDataInitialTab] = useState<'steg' | 'cbam' | 'profile'>('steg');
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
-  // Load from localStorage on mount
+  const storageKey = user?.id ? `symbiocarb_factory_data_${user.id}` : null;
+  const savedAtKey = user?.id ? `symbiocarb_factory_saved_at_${user.id}` : null;
+
+  // Hydrate factory data scoped strictly to the authenticated user (or clean zero-state)
   useEffect(() => {
+    if (!isAuthenticated || !storageKey) {
+      setAuditData(INITIAL_AUDIT_DATA);
+      setLastSavedAt(null);
+      return;
+    }
+
     try {
-      const saved = localStorage.getItem('symbiocarb_audit_data');
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        setAuditData(parsed);
+        setAuditData({
+          ...INITIAL_AUDIT_DATA,
+          ...parsed,
+          monthlyBills: Array.isArray(parsed.monthlyBills) ? parsed.monthlyBills : [],
+          bomMaterials: Array.isArray(parsed.bomMaterials) ? parsed.bomMaterials : [],
+        });
+      } else {
+        setAuditData({
+          ...INITIAL_AUDIT_DATA,
+          contactEmail: user?.email || '',
+        });
       }
-      const savedDate = localStorage.getItem('symbiocarb_audit_saved_at');
-      if (savedDate) {
-        setLastSavedAt(savedDate);
+      if (savedAtKey) {
+        const savedDate = localStorage.getItem(savedAtKey);
+        setLastSavedAt(savedDate || null);
       }
     } catch {
-      // ignore JSON parse errors
+      setAuditData(INITIAL_AUDIT_DATA);
     }
-  }, []);
+  }, [isAuthenticated, storageKey, savedAtKey, user?.email]);
+
+  const persistData = (next: AuditWizardData) => {
+    const now = new Date().toISOString();
+    setLastSavedAt(now);
+    if (storageKey) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+        if (savedAtKey) localStorage.setItem(savedAtKey, now);
+      } catch {
+        // ignore quota errors
+      }
+    }
+  };
 
   const updateAuditData = (updates: Partial<AuditWizardData>) => {
     setAuditData((prev) => {
       const next = { ...prev, ...updates };
-      try {
-        localStorage.setItem('symbiocarb_audit_data', JSON.stringify(next));
-      } catch {
-        // storage quota fallback
-      }
+      persistData(next);
       return next;
     });
   };
 
-  const applyPreset = (presetKey: 'metal' | 'olive' | 'dates') => {
-    const preset = SECTOR_PRESETS[presetKey];
-    if (preset) {
-      updateAuditData(preset);
-    }
+  const syncSummaryFromBills = (bills: MonthlyBillEntry[], prev: AuditWizardData): Partial<AuditWizardData> => {
+    if (bills.length === 0) return {};
+    const sorted = [...bills].sort((a, b) => (b.year * 12 + b.month) - (a.year * 12 + a.month));
+    const latest = sorted[0];
+    const count = bills.length;
+    const avg = (fn: (b: MonthlyBillEntry) => number) =>
+      Math.round((bills.reduce((acc, b) => acc + fn(b), 0) / count) * 100) / 100;
+
+    return {
+      tariffRegime: latest.tariffRegime,
+      districtSteg: latest.districtSteg || prev.districtSteg,
+      pSouscriteKva: latest.pSouscriteKva,
+      pMaxAppeleeKva: Math.max(...bills.map((b) => b.pMaxAppeleeKva)),
+      kwhJour: Math.round(avg((b) => b.kwhJour)),
+      kwhPointe: Math.round(avg((b) => b.kwhPointe)),
+      kwhSoir: Math.round(avg((b) => b.kwhSoir)),
+      kwhNuit: Math.round(avg((b) => b.kwhNuit)),
+      kvarhTotal: Math.round(avg((b) => b.kvarhTotal)),
+      cosPhi: Number((bills.reduce((acc, b) => acc + b.cosPhi, 0) / count).toFixed(3)),
+      reactivePenaltyTnd: avg((b) => b.reactivePenaltyTnd),
+      powerOverrunPenaltyTnd: avg((b) => b.powerOverrunPenaltyTnd),
+      monthlyBillTnd: avg((b) => b.totalTtcTnd),
+    };
   };
 
-  // ============================================================================
-  // Deterministic Mathematical Computation (Zero Hallucination)
-  // ============================================================================
+  const addMonthlyBill = (bill: Omit<MonthlyBillEntry, 'id'>) => {
+    setAuditData((prev) => {
+      const newEntry: MonthlyBillEntry = {
+        ...bill,
+        id: `bill-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      };
+      const updatedBills = [newEntry, ...prev.monthlyBills];
+      const synced = syncSummaryFromBills(updatedBills, prev);
+      const next: AuditWizardData = { ...prev, ...synced, monthlyBills: updatedBills };
+      persistData(next);
+      return next;
+    });
+  };
+
+  const importMonthlyBills = (bills: Omit<MonthlyBillEntry, 'id'>[]) => {
+    if (bills.length === 0) return;
+    setAuditData((prev) => {
+      const newEntries: MonthlyBillEntry[] = bills.map((b, idx) => ({
+        ...b,
+        id: `bill-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 5)}`,
+      }));
+      const updatedBills = [...newEntries, ...prev.monthlyBills];
+      const synced = syncSummaryFromBills(updatedBills, prev);
+      const next: AuditWizardData = { ...prev, ...synced, monthlyBills: updatedBills };
+      persistData(next);
+      return next;
+    });
+  };
+
+  const removeMonthlyBill = (id: string) => {
+    setAuditData((prev) => {
+      const updatedBills = prev.monthlyBills.filter((b) => b.id !== id);
+      const synced = updatedBills.length > 0 ? syncSummaryFromBills(updatedBills, prev) : {
+        kwhJour: 0,
+        kwhPointe: 0,
+        kwhSoir: 0,
+        kwhNuit: 0,
+        kvarhTotal: 0,
+        cosPhi: 0,
+        pSouscriteKva: 0,
+        pMaxAppeleeKva: 0,
+        reactivePenaltyTnd: 0,
+        powerOverrunPenaltyTnd: 0,
+        monthlyBillTnd: 0,
+      };
+      const next: AuditWizardData = { ...prev, ...synced, monthlyBills: updatedBills };
+      persistData(next);
+      return next;
+    });
+  };
+
+  const addBomMaterial = (material: Omit<BomMaterialEntry, 'id'>) => {
+    setAuditData((prev) => {
+      const newEntry: BomMaterialEntry = {
+        ...material,
+        id: `bom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      };
+      const next = { ...prev, bomMaterials: [...prev.bomMaterials, newEntry] };
+      persistData(next);
+      return next;
+    });
+  };
+
+  const removeBomMaterial = (id: string) => {
+    setAuditData((prev) => {
+      const next = {
+        ...prev,
+        bomMaterials: prev.bomMaterials.filter((m) => m.id !== id),
+      };
+      persistData(next);
+      return next;
+    });
+  };
+
+  const resetAuditData = () => {
+    const clean = { ...INITIAL_AUDIT_DATA, contactEmail: user?.email || '' };
+    setAuditData(clean);
+    persistData(clean);
+  };
+
   const computeAuditResults = (): AuditResults => {
     const kwhTotal = auditData.kwhJour + auditData.kwhPointe + auditData.kwhSoir + auditData.kwhNuit;
+    const hasEnergyData = kwhTotal > 0 || auditData.monthlyBillTnd > 0 || auditData.monthlyBills.length > 0;
 
-    // Scope 1: Direct emissions
-    // Facteurs d'émissions officiels ANME / GIEC:
-    // Gaz naturel: ~2.02 kgCO2e/Nm3
-    // Fuel lourd: ~3.15 kgCO2e/kg = 3150 kgCO2e/tonne
-    // Gasoil: ~2.68 kgCO2e/L
+    // Safe percentages
+    const pctJour = kwhTotal > 0 ? Number(((auditData.kwhJour / kwhTotal) * 100).toFixed(1)) : 0;
+    const pctPointe = kwhTotal > 0 ? Number(((auditData.kwhPointe / kwhTotal) * 100).toFixed(1)) : 0;
+    const pctSoir = kwhTotal > 0 ? Number(((auditData.kwhSoir / kwhTotal) * 100).toFixed(1)) : 0;
+    const pctNuit = kwhTotal > 0 ? Number(((auditData.kwhNuit / kwhTotal) * 100).toFixed(1)) : 0;
+
+    // STEG monthly bill calculation (only when energy data exists)
+    let estimatedMonthlyStegTnd = 0;
+    if (kwhTotal > 0) {
+      const tariffCalc = calculateStegMtBill({
+        kwhJour: auditData.kwhJour,
+        kwhPointe: auditData.kwhPointe,
+        kwhSoir: auditData.kwhSoir,
+        kwhNuit: auditData.kwhNuit,
+        kvarhTotal: auditData.kvarhTotal,
+        pSouscriteKva: auditData.pSouscriteKva,
+        pMaxAppeleeKva: auditData.pMaxAppeleeKva,
+        tariffRegime: auditData.tariffRegime,
+      });
+      estimatedMonthlyStegTnd = auditData.monthlyBillTnd > 0 ? auditData.monthlyBillTnd : Math.round(tariffCalc.totalTtcTnd);
+    } else if (auditData.monthlyBillTnd > 0) {
+      estimatedMonthlyStegTnd = auditData.monthlyBillTnd;
+    }
+
+    // Scope 1: Direct Fuel Emissions (annualized from monthly consumption)
     const scope1Gas = (auditData.naturalGasM3 * 2.02) / 1000;
     const scope1Fuel = (auditData.heavyFuelTons * 3150) / 1000;
     const scope1Diesel = (auditData.dieselLiters * 2.68) / 1000;
     const scope1Annual = (scope1Gas + scope1Fuel + scope1Diesel) * 12;
 
-    // Scope 2: STEG Grid electricity
-    // Facteur d'émission officiel réseau STEG MT (ANME 2024/2026): 0.462 kgCO2e/kWh
-    const scope2Annual = (kwhTotal * 12 * 0.462) / 1000;
+    // Scope 2: STEG Grid electricity (ANME/STEG factor: 0.473 kgCO2e/kWh)
+    const scope2Annual = (kwhTotal * 12 * 0.473) / 1000;
 
-    // Scope 3: Upstream Raw Materials (BOM)
-    // Acier: 1.85 tCO2e/t
-    // Aluminium: 4.5 tCO2e/t
-    const scope3Annual = (auditData.steelTons * 1.85) + (auditData.aluminumTons * 4.5);
+    // Scope 3: Upstream BOM Materials
+    const bomDynamicTco2e = auditData.bomMaterials.reduce(
+      (sum, item) => sum + item.quantityTons * item.efTco2ePerTon,
+      0
+    );
+    const legacyScope3 = auditData.steelTons * 1.85 + auditData.aluminumTons * 4.5;
+    const scope3Annual = bomDynamicTco2e + legacyScope3;
 
     const totalTco2e = scope1Annual + scope2Annual + scope3Annual;
-    const productionTons = Math.max(1, auditData.annualProductionTons);
-    const exportTons = Math.max(1, auditData.annualExportTons);
+    const hasCarbonData = totalTco2e > 0 || auditData.annualProductionTons > 0;
 
-    // Specific Embedded Emissions per ton produced
-    const specificEmbeddedEmissionsTco2ePerTon = Number((totalTco2e / productionTons).toFixed(3));
+    // Specific Embedded Emissions (strict 0 guard)
+    const specificEmbeddedEmissionsTco2ePerTon =
+      auditData.annualProductionTons > 0
+        ? Number((totalTco2e / auditData.annualProductionTons).toFixed(3))
+        : 0;
 
-    // CBAM Exposure: ETS quota price ~85 EUR/t, benchmark EU steel/product ~1.15 tCO2e/t
+    // CBAM Tax Exposure (only when production & export volumes exist)
     const euBenchmark = 1.15;
-    const netTaxablePerTon = Math.max(0, specificEmbeddedEmissionsTco2ePerTon - euBenchmark);
-    const cbamTaxExposureEur = Math.round(netTaxablePerTon * exportTons * 85);
+    const netTaxablePerTon =
+      specificEmbeddedEmissionsTco2ePerTon > 0
+        ? Math.max(0, specificEmbeddedEmissionsTco2ePerTon - euBenchmark)
+        : 0;
+    const cbamTaxExposureEur =
+      auditData.annualExportTons > 0
+        ? Math.round(netTaxablePerTon * auditData.annualExportTons * 85)
+        : 0;
     const cbamTaxExposureTnd = Math.round(cbamTaxExposureEur * 3.38);
 
-    // Energy & STEG: Capacitor bank sizing
-    const activePowerKw = (auditData.kwhJour + auditData.kwhPointe) / 300;
-    const cosPhiCompensation = solveCosPhiCompensation({
-      activePowerKw: Math.max(50, activePowerKw),
-      currentCosPhi: Math.min(0.99, Math.max(0.6, auditData.cosPhi)),
-      targetCosPhi: 0.95,
-      annualActiveKwh: kwhTotal * 12,
-      annualReactivePenaltyTnd: auditData.reactivePenaltyTnd * 12,
-      hasHarmonicLoads: auditData.sector === 'metal_mechanics',
-    });
+    // Capacitor Bank & STEG Savings (strict 0 guard when no STEG inputs)
+    let requiredCapacitorKvar = 0;
+    let annualReactivePenaltySavingsTnd = 0;
+    let annualPowerOverrunSavingsTnd = 0;
+    let totalAnnualStegSavingsTnd = 0;
+    let anmeFteSubsidyTnd = 0;
 
-    const annualReactivePenaltySavingsTnd = cosPhiCompensation.annualPenaltySavedTnd;
-    const annualPowerOverrunSavingsTnd = Math.max(0, (auditData.pMaxAppeleeKva - auditData.pSouscriteKva) * 18 * 12);
-    const totalAnnualStegSavingsTnd = annualReactivePenaltySavingsTnd + annualPowerOverrunSavingsTnd;
+    if (kwhTotal > 0 && auditData.cosPhi > 0 && auditData.cosPhi < 0.95) {
+      const activePowerKw = (auditData.kwhJour + auditData.kwhPointe) / 300;
+      if (activePowerKw > 0) {
+        const cosPhiCompensation = solveCosPhiCompensation({
+          activePowerKw,
+          currentCosPhi: Math.min(0.99, Math.max(0.5, auditData.cosPhi)),
+          targetCosPhi: 0.95,
+          annualActiveKwh: kwhTotal * 12,
+          annualReactivePenaltyTnd: auditData.reactivePenaltyTnd * 12,
+          hasHarmonicLoads: auditData.sector === 'metal_mechanics',
+        });
+        requiredCapacitorKvar = Math.round(cosPhiCompensation.requiredQcKvar);
+        annualReactivePenaltySavingsTnd = Math.round(cosPhiCompensation.annualPenaltySavedTnd);
+        anmeFteSubsidyTnd = Math.round(cosPhiCompensation.estimatedCapexTnd * 0.2);
+      }
+    } else if (auditData.reactivePenaltyTnd > 0) {
+      annualReactivePenaltySavingsTnd = Math.round(auditData.reactivePenaltyTnd * 12);
+    }
 
-    // ANME Subventions FTE (Fonds de Transition Énergétique):
-    // Prise en charge 70% audit énergétique (plafond 30,000 TND) + prime 20% investissement condensateurs
-    const anmeFteSubsidyTnd = Math.round(15000 + cosPhiCompensation.estimatedCapexTnd * 0.2);
+    if (auditData.pMaxAppeleeKva > auditData.pSouscriteKva && auditData.pSouscriteKva > 0) {
+      annualPowerOverrunSavingsTnd = Math.round(
+        (auditData.pMaxAppeleeKva - auditData.pSouscriteKva) * 25 * 12
+      );
+    }
 
-    // BioClaira Pyrolysis & Valorization
-    const feedstockMap: Record<string, 'olive_pomace' | 'date_pits' | 'margines'> = {
-      olive_pomace: 'olive_pomace',
-      date_pits: 'date_pits',
-      olive_mill_wastewater: 'margines',
-      metal_scrap: 'olive_pomace',
-      plastic_scrap: 'olive_pomace',
-    };
-    const bioResult = simulateBioClairaValorization({
-      wasteType: feedstockMap[auditData.wasteType] || 'olive_pomace',
-      rawTonnage: Math.max(1, auditData.wasteMonthlyTons * 12),
-      moisturePct: auditData.moisturePercent,
-    });
+    totalAnnualStegSavingsTnd = annualReactivePenaltySavingsTnd + annualPowerOverrunSavingsTnd;
 
-    const biocharYieldTonsPerYear = Number(bioResult.biocharTons.toFixed(1));
-    const co2SequestrationTco2ePerYear = Number(bioResult.netAvoidedTco2e.toFixed(1));
-    const annualCircularValorizationTnd = Math.round(bioResult.grossMarketValueTnd);
+    // BioClaira Waste Valorization (strict 0 guard when no waste entered)
+    const hasWasteData = auditData.wasteMonthlyTons > 0;
+    let biocharYieldTonsPerYear = 0;
+    let co2SequestrationTco2ePerYear = 0;
+    let annualCircularValorizationTnd = 0;
 
-    // Audit Readiness Score (ISO 14064 + CBAM completeness %):
-    let score = 20; // baseline identity
-    if (auditData.exportCnCode.length >= 4) score += 20;
-    if (kwhTotal > 0 && auditData.cosPhi > 0) score += 20;
-    if (auditData.naturalGasM3 > 0 || auditData.heavyFuelTons > 0 || auditData.dieselLiters > 0) score += 20;
-    if (auditData.steelTons > 0 || auditData.wasteMonthlyTons > 0) score += 20;
+    if (hasWasteData) {
+      const feedstockMap: Record<WasteStreamType, 'olive_pomace' | 'date_pits' | 'margines' | 'metal_shavings' | 'hdpe_plastic'> = {
+        olive_pomace: 'olive_pomace',
+        date_pits: 'date_pits',
+        olive_mill_wastewater: 'margines',
+        metal_scrap: 'metal_shavings',
+        plastic_scrap: 'hdpe_plastic',
+      };
+      const bioResult = simulateBioClairaValorization({
+        wasteType: feedstockMap[auditData.wasteType] || 'olive_pomace',
+        rawTonnage: auditData.wasteMonthlyTons * 12,
+        moisturePct: auditData.moisturePercent || undefined,
+      });
+      biocharYieldTonsPerYear = Number((bioResult.biocharTons + bioResult.activatedCarbonTons).toFixed(1));
+      co2SequestrationTco2ePerYear = Number(bioResult.netAvoidedTco2e.toFixed(1));
+      annualCircularValorizationTnd = Math.round(bioResult.netAnnualProfitTnd);
+    }
+
+    // Readiness Score (0% when untouched)
+    let score = 0;
+    if (auditData.companyName.trim().length > 1) score += 20;
+    if (auditData.exportCnCode.trim().length >= 4 && auditData.annualProductionTons > 0) score += 25;
+    if (kwhTotal > 0 && auditData.cosPhi > 0) score += 30;
+    if (auditData.naturalGasM3 > 0 || auditData.heavyFuelTons > 0 || auditData.dieselLiters > 0) score += 15;
+    if (auditData.bomMaterials.length > 0 || auditData.steelTons > 0 || auditData.aluminumTons > 0) score += 10;
 
     return {
-      scope1Tco2e: Math.round(scope1Annual),
-      scope2Tco2e: Math.round(scope2Annual),
-      scope3Tco2e: Math.round(scope3Annual),
-      totalTco2e: Math.round(totalTco2e),
+      hasEnergyData,
+      hasCarbonData,
+      hasWasteData,
+      hasAnyData: hasEnergyData || hasCarbonData || hasWasteData || auditData.companyName.trim().length > 0,
+      kwhTotal,
+      pctJour,
+      pctPointe,
+      pctSoir,
+      pctNuit,
+      estimatedMonthlyStegTnd,
+      scope1Tco2e: Number(scope1Annual.toFixed(2)),
+      scope2Tco2e: Number(scope2Annual.toFixed(2)),
+      scope3Tco2e: Number(scope3Annual.toFixed(2)),
+      totalTco2e: Number(totalTco2e.toFixed(2)),
       specificEmbeddedEmissionsTco2ePerTon,
       cbamTaxExposureEur,
       cbamTaxExposureTnd,
       cosPhiCurrent: auditData.cosPhi,
-      requiredCapacitorKvar: Math.round(cosPhiCompensation.requiredQcKvar),
-      annualReactivePenaltySavingsTnd: Math.round(annualReactivePenaltySavingsTnd),
-      annualPowerOverrunSavingsTnd: Math.round(annualPowerOverrunSavingsTnd),
-      totalAnnualStegSavingsTnd: Math.round(totalAnnualStegSavingsTnd),
+      requiredCapacitorKvar,
+      annualReactivePenaltySavingsTnd,
+      annualPowerOverrunSavingsTnd,
+      totalAnnualStegSavingsTnd,
       anmeFteSubsidyTnd,
       biocharYieldTonsPerYear,
       co2SequestrationTco2ePerYear,
@@ -334,46 +533,32 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
   const results = computeAuditResults();
 
   const saveAuditToProfile = () => {
-    const now = new Date().toISOString();
-    setLastSavedAt(now);
-    localStorage.setItem('symbiocarb_audit_saved_at', now);
-    localStorage.setItem('symbiocarb_audit_data', JSON.stringify(auditData));
-
-    // Dynamically synchronize fallback custom data so the whole app inherits these real inputs!
-    if (FALLBACK_ORGANIZATIONS.custom) {
-      FALLBACK_ORGANIZATIONS.custom.name_fr = auditData.companyName;
-      FALLBACK_ORGANIZATIONS.custom.governorate = auditData.governorate;
-      FALLBACK_ORGANIZATIONS.custom.industrial_zone = auditData.industrialZone;
-      FALLBACK_ORGANIZATIONS.custom.sector = auditData.sector;
-      FALLBACK_ORGANIZATIONS.custom.contact_email = auditData.contactEmail;
-      FALLBACK_ORGANIZATIONS.custom.contact_phone = auditData.contactPhone;
-    }
-
-    if (FALLBACK_BILLS.custom) {
-      FALLBACK_BILLS.custom.kwh_jour = auditData.kwhJour;
-      FALLBACK_BILLS.custom.kwh_pointe = auditData.kwhPointe;
-      FALLBACK_BILLS.custom.kwh_soir = auditData.kwhSoir;
-      FALLBACK_BILLS.custom.kwh_nuit = auditData.kwhNuit;
-      FALLBACK_BILLS.custom.kwh_total = auditData.kwhJour + auditData.kwhPointe + auditData.kwhSoir + auditData.kwhNuit;
-      FALLBACK_BILLS.custom.kvarh_total = auditData.kvarhTotal;
-      FALLBACK_BILLS.custom.cos_phi = auditData.cosPhi;
-      FALLBACK_BILLS.custom.p_souscrite_kva = auditData.pSouscriteKva;
-      FALLBACK_BILLS.custom.p_max_appelee_kva = auditData.pMaxAppeleeKva;
-      FALLBACK_BILLS.custom.reactive_penalty_tnd = auditData.reactivePenaltyTnd;
-      FALLBACK_BILLS.custom.power_overrun_penalty_tnd = auditData.powerOverrunPenaltyTnd;
-    }
+    persistData(auditData);
   };
+
+  const openAddDataModal = (tab: 'steg' | 'cbam' | 'profile' = 'steg') => {
+    setAddDataInitialTab(tab);
+    setIsAddDataOpen(true);
+  };
+
+  const closeAddDataModal = () => setIsAddDataOpen(false);
 
   return (
     <AuditContext.Provider
       value={{
         auditData,
         updateAuditData,
-        applyPreset,
+        addMonthlyBill,
+        importMonthlyBills,
+        removeMonthlyBill,
+        addBomMaterial,
+        removeBomMaterial,
+        resetAuditData,
         results,
-        isWizardOpen,
-        openWizard: () => setIsWizardOpen(true),
-        closeWizard: () => setIsWizardOpen(false),
+        isAddDataOpen,
+        addDataInitialTab,
+        openAddDataModal,
+        closeAddDataModal,
         saveAuditToProfile,
         lastSavedAt,
       }}

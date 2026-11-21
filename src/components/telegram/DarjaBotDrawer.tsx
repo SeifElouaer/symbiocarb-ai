@@ -32,15 +32,15 @@ interface ChatMessage {
 }
 
 export function DarjaBotDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { t, locale, persona } = useTranslation();
+  const { t, locale } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       sender: 'bot',
       text: locale === 'ar-TN' 
-        ? 'عسلامة سي سيف! أنا درجة بوت، مساعدك الميداني في المعمل. كيفاش نجم نعاونك اليوم؟ تنجم تسألني على استهلاك الستاغ، خطية الكوس في (cos φ)، وإلا تثمين مخلفات المعصرة والتمر.'
-        : 'Sallam Si Seif! Je suis DarjaBot, votre copilote terrain d\'ingénierie et de décarbonation. Comment puis-je vous assister aujourd\'hui ?',
-      timestamp: '19:42',
+        ? 'مرحباً! أنا درجة بوت، مساعدك الميداني في المعمل. كيفاش نجم نعاونك اليوم؟ تنجم تسألني على استهلاك الستاغ، خطية الكوس في (cos φ)، أو حسابات الانبعاثات.'
+        : 'Bonjour ! Je suis DarjaBot, votre assistant terrain d\'ingénierie et de décarbonation. Comment puis-je vous assister aujourd\'hui ?',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -82,7 +82,6 @@ export function DarjaBotDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: 
         body: JSON.stringify({
           message: content,
           locale,
-          persona,
         }),
       });
       const data = await res.json();
@@ -103,7 +102,7 @@ export function DarjaBotDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: 
         id: (Date.now() + 1).toString(),
         sender: 'bot',
         text: locale === 'ar-TN'
-          ? 'يعطيك الصحة سي سيف! الميساج وصل وكلمت الفريق الفني باش يتبعو العداد.'
+          ? 'تم استلام رسالتك وتسجيل الملاحظة في المنظومة بنجاح.'
           : 'Message reçu ! Les paramètres sont enregistrés.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };

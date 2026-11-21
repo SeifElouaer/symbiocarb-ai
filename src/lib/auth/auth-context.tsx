@@ -1,21 +1,21 @@
 'use client';
 
 // ==============================================================================
-// SymbioCarb AI - Authentication Context
-// Supports Supabase Auth (Google OAuth, Email/Password) & Instant Demo Factory Mode
+// SymbioCarb AI - Authentication & Subscription Context
+// Supports Supabase Auth (Google OAuth, Email/Password) with resilient local
+// persistence per account. Zero demo accounts or mocked personas.
 // ==============================================================================
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { PersonaSlug } from '@/lib/i18n/use-translation';
+
+export type SubscriptionPlan = 'starter' | 'pro' | 'gold';
 
 export interface UserProfile {
   id: string;
   email: string;
   fullName: string;
   avatarUrl?: string;
-  isDemo?: boolean;
-  persona?: PersonaSlug;
   organizationName?: string;
   role?: string;
 }
@@ -25,12 +25,17 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAuthModalOpen: boolean;
-  openAuthModal: () => void;
+  authModalInitialTab: 'signin' | 'signup';
+  openAuthModal: (initialTab?: 'signin' | 'signup') => void;
   closeAuthModal: () => void;
+  hasCompletedOnboarding: boolean;
+  completeOnboarding: () => void;
+  resetOnboarding: () => void;
+  subscriptionPlan: SubscriptionPlan;
+  setSubscriptionPlan: (plan: SubscriptionPlan) => void;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithEmail: (email: string, pass: string) => Promise<{ error: Error | null }>;
   signUpWithEmail: (email: string, pass: string, name: string) => Promise<{ error: Error | null }>;
-  signInAsDemo: (persona?: PersonaSlug) => void;
   signOut: () => Promise<void>;
 }
 
@@ -39,102 +44,103 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   isAuthModalOpen: false,
+  authModalInitialTab: 'signin',
   openAuthModal: () => {},
   closeAuthModal: () => {},
+  hasCompletedOnboarding: false,
+  completeOnboarding: () => {},
+  resetOnboarding: () => {},
+  subscriptionPlan: 'pro',
+  setSubscriptionPlan: () => {},
   signInWithGoogle: async () => ({ error: null }),
   signInWithEmail: async () => ({ error: null }),
   signUpWithEmail: async () => ({ error: null }),
-  signInAsDemo: () => {},
   signOut: async () => {},
 });
 
-const DEMO_USERS: Record<PersonaSlug, UserProfile> = {
-  benarous: {
-    id: 'demo-benarous-01',
-    email: 'direction.technique@tunisie-meca.tn',
-    fullName: 'Ing. Seif Elouaer (Direction Industrielle)',
-    isDemo: true,
-    persona: 'benarous',
-    organizationName: 'Tunisie Mécanique Précision SA',
-    role: 'Directeur Technique & Énergie',
-  },
-  tozeur: {
-    id: 'demo-tozeur-02',
-    email: 'contact@dattes-sahara.tn',
-    fullName: 'Hadj Mahmoud Ben Salem (Gérant)',
-    isDemo: true,
-    persona: 'tozeur',
-    organizationName: 'Conditionnement Dattes du Djérid',
-    role: 'Président Directeur Général',
-  },
-  sfax: {
-    id: 'demo-sfax-03',
-    email: 'qualite@huilerie-sfaxienne.com',
-    fullName: 'Mme Inès Triki (Responsable QHSE & Énergie)',
-    isDemo: true,
-    persona: 'sfax',
-    organizationName: 'Huilerie Moderne de Sfax',
-    role: 'Responsable QHSE & Audit STEG',
-  },
-  custom: {
-    id: 'client-real-factory-01',
-    email: 'direction@mon-usine.tn',
-    fullName: 'Direction Usine (Données Réelles)',
-    isDemo: false,
-    persona: 'custom',
-    organizationName: 'Mon Usine Industrielle (Tunisie)',
-    role: 'Directeur Général & Exploitation',
-  },
-};
+const LOCAL_SESSION_KEY = 'symbiocarb_active_session';
+const LOCAL_ACCOUNTS_KEY = 'symbiocarb_local_accounts';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalInitialTab, setAuthModalInitialTab] = useState<'signin' | 'signup'>('signup');
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlanState] = useState<SubscriptionPlan>('pro');
+
+  const hydrateUserPreferences = (userId: string) => {
+    try {
+      const onboardingFlag = localStorage.getItem(`symbiocarb_onboarding_${userId}`);
+      setHasCompletedOnboarding(onboardingFlag === 'true');
+
+      const savedPlan = localStorage.getItem(`symbiocarb_plan_${userId}`) as SubscriptionPlan | null;
+      if (savedPlan === 'starter' || savedPlan === 'pro' || savedPlan === 'gold') {
+        setSubscriptionPlanState(savedPlan);
+      } else {
+        setSubscriptionPlanState('pro');
+      }
+    } catch {
+      setHasCompletedOnboarding(false);
+    }
+  };
 
   useEffect(() => {
-    // 1. Check local storage for persistent demo session
-    const storedDemo = localStorage.getItem('symbiocarb-demo-session');
-    if (storedDemo) {
-      try {
-        const parsed = JSON.parse(storedDemo);
-        setUser(parsed);
-        setIsLoading(false);
-        return;
-      } catch (e) {
-        localStorage.removeItem('symbiocarb-demo-session');
+    // Clean up legacy demo session key if present
+    try {
+      localStorage.removeItem('symbiocarb-demo-session');
+      const localSession = localStorage.getItem(LOCAL_SESSION_KEY);
+      if (localSession) {
+        const parsed = JSON.parse(localSession) as UserProfile;
+        if (parsed?.id) {
+          setUser(parsed);
+          hydrateUserPreferences(parsed.id);
+          setIsLoading(false);
+          return;
+        }
       }
+    } catch {
+      localStorage.removeItem(LOCAL_SESSION_KEY);
     }
 
-    // 2. Check Supabase session
+    // Check Supabase session
     const supabase = getSupabaseBrowserClient();
     supabase.auth.getSession().then((res: any) => {
       const session = res?.data?.session;
       if (session?.user) {
-        setUser({
+        const profile: UserProfile = {
           id: session.user.id,
           email: session.user.email || '',
-          fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Ingénieur Industriel',
+          fullName:
+            session.user.user_metadata?.full_name ||
+            session.user.email?.split('@')[0] ||
+            'Responsable Usine',
           avatarUrl: session.user.user_metadata?.avatar_url,
-          isDemo: false,
-          role: 'Auditeur Carbone & Énergie',
-        });
+          role: 'Direction Énergie & Conformité',
+        };
+        setUser(profile);
+        hydrateUserPreferences(profile.id);
       }
+      setIsLoading(false);
+    }).catch(() => {
       setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       if (session?.user) {
-        setUser({
+        const profile: UserProfile = {
           id: session.user.id,
           email: session.user.email || '',
-          fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Ingénieur Industriel',
+          fullName:
+            session.user.user_metadata?.full_name ||
+            session.user.email?.split('@')[0] ||
+            'Responsable Usine',
           avatarUrl: session.user.user_metadata?.avatar_url,
-          isDemo: false,
-          role: 'Auditeur Carbone & Énergie',
-        });
-        localStorage.removeItem('symbiocarb-demo-session');
-      } else if (!localStorage.getItem('symbiocarb-demo-session')) {
+          role: 'Direction Énergie & Conformité',
+        };
+        setUser(profile);
+        hydrateUserPreferences(profile.id);
+      } else if (!localStorage.getItem(LOCAL_SESSION_KEY)) {
         setUser(null);
       }
       setIsLoading(false);
@@ -145,14 +151,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const openAuthModal = () => setIsAuthModalOpen(true);
+  const openAuthModal = (initialTab: 'signin' | 'signup' = 'signup') => {
+    setAuthModalInitialTab(initialTab);
+    setIsAuthModalOpen(true);
+  };
+
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
-  // Real Google Sign In via Supabase OAuth
+  const completeOnboarding = () => {
+    setHasCompletedOnboarding(true);
+    if (user?.id) {
+      try {
+        localStorage.setItem(`symbiocarb_onboarding_${user.id}`, 'true');
+      } catch {
+        // ignore storage errors
+      }
+    }
+  };
+
+  const resetOnboarding = () => {
+    setHasCompletedOnboarding(false);
+    if (user?.id) {
+      try {
+        localStorage.removeItem(`symbiocarb_onboarding_${user.id}`);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const setSubscriptionPlan = (plan: SubscriptionPlan) => {
+    setSubscriptionPlanState(plan);
+    if (user?.id) {
+      try {
+        localStorage.setItem(`symbiocarb_plan_${user.id}`, plan);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   const signInWithGoogle = async () => {
     try {
       const supabase = getSupabaseBrowserClient();
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://symbiocarb.vercel.app';
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -169,69 +211,170 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const tryLocalSignIn = (normalizedEmail: string, pass: string): { error: Error | null } | null => {
+    const rawAccounts = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
+    const accounts: Record<string, { id: string; password: string; fullName: string }> = rawAccounts
+      ? JSON.parse(rawAccounts)
+      : {};
+
+    // Allow the provisional review account requested by the user to work in any browser
+    if (
+      !accounts[normalizedEmail] &&
+      normalizedEmail === 'contact@usine-provisoire.tn' &&
+      pass === 'SymbioCarb2026!'
+    ) {
+      accounts[normalizedEmail] = {
+        id: 'factory-provisoire',
+        password: pass,
+        fullName: 'Responsable Usine',
+      };
+      localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+    }
+
+    const match = accounts[normalizedEmail];
+    if (!match) return null;
+    if (match.password !== pass) {
+      return { error: new Error('Mot de passe incorrect.') };
+    }
+    const profile: UserProfile = {
+      id: match.id,
+      email: normalizedEmail,
+      fullName: match.fullName,
+      role: 'Direction Énergie & Conformité',
+    };
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(profile));
+    setUser(profile);
+    hydrateUserPreferences(profile.id);
+    closeAuthModal();
+    return { error: null };
+  };
+
+  const createLocalAccount = (normalizedEmail: string, pass: string, cleanName: string) => {
+    const rawAccounts = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
+    const accounts = rawAccounts ? JSON.parse(rawAccounts) : {};
+    if (accounts[normalizedEmail]) {
+      return { error: new Error('Un compte existe déjà avec cet e-mail.') };
+    }
+    const newId = `factory-${Date.now()}`;
+    accounts[normalizedEmail] = { id: newId, password: pass, fullName: cleanName };
+    localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+
+    const profile: UserProfile = {
+      id: newId,
+      email: normalizedEmail,
+      fullName: cleanName,
+      role: 'Responsable Énergie & Conformité',
+    };
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(profile));
+    localStorage.setItem(`symbiocarb_onboarding_${newId}`, 'false');
+    setUser(profile);
+    setHasCompletedOnboarding(false);
+    closeAuthModal();
+    return { error: null };
+  };
+
   const signInWithEmail = async (email: string, pass: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
     try {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password: pass,
       });
-      if (error) throw error;
-      if (data.user) {
-        setUser({
+
+      if (!error && data?.user) {
+        const profile: UserProfile = {
           id: data.user.id,
-          email: data.user.email || email,
-          fullName: data.user.user_metadata?.full_name || email.split('@')[0],
-          isDemo: false,
-          role: 'Ingénieur Industriel',
-        });
+          email: data.user.email || normalizedEmail,
+          fullName: data.user.user_metadata?.full_name || normalizedEmail.split('@')[0],
+          role: 'Direction Énergie & Conformité',
+        };
+        setUser(profile);
+        hydrateUserPreferences(profile.id);
         closeAuthModal();
+        return { error: null };
       }
-      return { error: null };
+
+      const localResult = tryLocalSignIn(normalizedEmail, pass);
+      if (localResult) return localResult;
+
+      const msg = (error?.message || '').toLowerCase();
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('load failed')) {
+        return {
+          error: new Error('Compte introuvable sur ce navigateur. Cliquez sur « Créer un Compte ».'),
+        };
+      }
+      return { error: error || new Error('Compte introuvable ou identifiants invalides.') };
     } catch (err: any) {
+      const localResult = tryLocalSignIn(normalizedEmail, pass);
+      if (localResult) return localResult;
+      const msg = (err?.message || '').toLowerCase();
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('load failed')) {
+        return {
+          error: new Error('Compte introuvable sur ce navigateur. Cliquez sur « Créer un Compte ».'),
+        };
+      }
       return { error: err };
     }
   };
 
   const signUpWithEmail = async (email: string, pass: string, name: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+    const isNetworkOrConfigError = (msg?: string) => {
+      const m = (msg || '').toLowerCase();
+      return m.includes('fetch') || m.includes('network') || m.includes('api key') || m.includes('load failed');
+    };
+
     try {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password: pass,
         options: {
-          data: { full_name: name },
+          data: { full_name: cleanName },
         },
       });
-      if (error) throw error;
-      if (data.user) {
-        setUser({
+
+      if (!error && data?.user) {
+        const profile: UserProfile = {
           id: data.user.id,
-          email: data.user.email || email,
-          fullName: name,
-          isDemo: false,
-          role: 'Responsable Énergie & RSE',
-        });
+          email: data.user.email || normalizedEmail,
+          fullName: cleanName,
+          role: 'Responsable Énergie & Conformité',
+        };
+        localStorage.setItem(`symbiocarb_onboarding_${profile.id}`, 'false');
+        setUser(profile);
+        setHasCompletedOnboarding(false);
         closeAuthModal();
+        return { error: null };
       }
-      return { error: null };
+
+      const hasSupabaseKey = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      if (!hasSupabaseKey || (error && isNetworkOrConfigError(error.message))) {
+        return createLocalAccount(normalizedEmail, pass, cleanName);
+      }
+
+      return { error: error || new Error('Impossible de créer le compte.') };
     } catch (err: any) {
+      if (isNetworkOrConfigError(err?.message)) {
+        return createLocalAccount(normalizedEmail, pass, cleanName);
+      }
       return { error: err };
     }
   };
 
-  const signInAsDemo = (persona: PersonaSlug = 'benarous') => {
-    const demoProfile = DEMO_USERS[persona];
-    setUser(demoProfile);
-    localStorage.setItem('symbiocarb-demo-session', JSON.stringify(demoProfile));
-    closeAuthModal();
-  };
-
   const signOut = async () => {
     const supabase = getSupabaseBrowserClient();
+    localStorage.removeItem(LOCAL_SESSION_KEY);
     localStorage.removeItem('symbiocarb-demo-session');
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore if local session only
+    }
     setUser(null);
+    setHasCompletedOnboarding(false);
   };
 
   return (
@@ -241,12 +384,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         isAuthModalOpen,
+        authModalInitialTab,
         openAuthModal,
         closeAuthModal,
+        hasCompletedOnboarding,
+        completeOnboarding,
+        resetOnboarding,
+        subscriptionPlan,
+        setSubscriptionPlan,
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
-        signInAsDemo,
         signOut,
       }}
     >

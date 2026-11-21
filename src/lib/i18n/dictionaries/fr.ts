@@ -9,38 +9,13 @@ export const fr = {
   
   // Navigation
   nav: {
-    dashboard: 'Cockpit Industriel',
+    dashboard: 'Tableau de Bord',
     energy: 'Énergie STEG & Subventions',
     cbam: 'Conformité CBAM & ISO 14064',
-    symbiosis: 'Symbiose & BioClaira',
-    ocr: 'Document AI Factures',
+    symbiosis: 'BioClaira (Pack Gold)',
+    ocr: 'Import & Scanner Factures',
     copilot: 'DarjaBot Terrain',
-    switchPersona: 'Changer d\'usine démo',
-    activePersona: 'Usine Active',
-  },
-
-  // Personas
-  personas: {
-    sfax: {
-      name: 'Huilerie & Agro-Industrie de Sfax',
-      desc: 'Saison oléicole intense, pointe STEG & valorisation grignons/margines',
-      location: 'Sfax Thyna - Route de Gabès',
-    },
-    tozeur: {
-      name: 'Société Saharienne de Dattes & BioClaira',
-      desc: 'Chambres froides 24/7 & 600t noyaux convertis en Charbon Actif',
-      location: 'Zone Industrielle Tozeur',
-    },
-    benarous: {
-      name: 'Mécanique & Composants Ben Arous',
-      desc: 'Pénalités cos φ = 0.74 & déclaration douanière CBAM UE acier/alu',
-      location: 'Zone Industrielle El Mghira',
-    },
-    custom: {
-      name: 'Mon Usine (Données Réelles Personnalisées)',
-      desc: 'Calculs basés sur vos propres factures STEG et nomenclatures réelles',
-      location: 'Site Industriel Client (Tunisie)',
-    },
+    activeFacility: 'Usine Active',
   },
 
   // Dashboard Cockpit

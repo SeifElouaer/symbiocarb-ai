@@ -1,16 +1,9 @@
 // ==============================================================================
-// Supabase Browser Client with Automatic Fallback Layer
+// Supabase Browser Client (Clean Production/Zero-Mock Layer)
 // ==============================================================================
 
 import { createClient } from '@supabase/supabase-js';
-import { 
-  FALLBACK_ORGANIZATIONS, 
-  FALLBACK_BILLS, 
-  FALLBACK_EMISSION_FACTORS, 
-  FALLBACK_WASTE_LISTINGS, 
-  FALLBACK_SYMBIO_MATCHES 
-} from './fallback-data';
-import { Organization, UtilityBill, EmissionFactor, WasteListing, SymbiosisMatch } from '@/types';
+import { Organization, UtilityBill, WasteListing, SymbiosisMatch } from '@/types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ctybhgfawzchcqzboiau.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -18,7 +11,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const getSupabaseBrowserClient = () => supabase;
 
-export async function getOrganizationData(slug: string): Promise<Organization> {
+export async function getOrganizationData(slug: string): Promise<Organization | null> {
   try {
     const { data, error } = await supabase
       .from('organizations')
@@ -26,18 +19,14 @@ export async function getOrganizationData(slug: string): Promise<Organization> {
       .eq('slug', slug)
       .single();
 
-    if (error || !data) {
-      const key = slug.includes('sfax') ? 'sfax' : slug.includes('tozeur') ? 'tozeur' : 'benarous';
-      return FALLBACK_ORGANIZATIONS[key];
-    }
+    if (error || !data) return null;
     return data as Organization;
   } catch {
-    const key = slug.includes('sfax') ? 'sfax' : slug.includes('tozeur') ? 'tozeur' : 'benarous';
-    return FALLBACK_ORGANIZATIONS[key];
+    return null;
   }
 }
 
-export async function getLatestBill(orgId: string, slugKey: string): Promise<UtilityBill> {
+export async function getLatestBill(orgId: string): Promise<UtilityBill | null> {
   try {
     const { data, error } = await supabase
       .from('utility_bills')
@@ -48,12 +37,10 @@ export async function getLatestBill(orgId: string, slugKey: string): Promise<Uti
       .limit(1)
       .single();
 
-    if (error || !data) {
-      return FALLBACK_BILLS[slugKey] || FALLBACK_BILLS.benarous;
-    }
+    if (error || !data) return null;
     return data as UtilityBill;
   } catch {
-    return FALLBACK_BILLS[slugKey] || FALLBACK_BILLS.benarous;
+    return null;
   }
 }
 
@@ -64,24 +51,19 @@ export async function getWasteListings(orgId?: string): Promise<WasteListing[]> 
       query = query.eq('org_id', orgId);
     }
     const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      return FALLBACK_WASTE_LISTINGS;
-    }
+    if (error || !data) return [];
     return data as WasteListing[];
   } catch {
-    return FALLBACK_WASTE_LISTINGS;
+    return [];
   }
 }
 
 export async function getSymbiosisMatches(): Promise<SymbiosisMatch[]> {
   try {
     const { data, error } = await supabase.from('symbiosis_matches').select('*');
-    if (error || !data || data.length === 0) {
-      return FALLBACK_SYMBIO_MATCHES;
-    }
+    if (error || !data) return [];
     return data as SymbiosisMatch[];
   } catch {
-    return FALLBACK_SYMBIO_MATCHES;
+    return [];
   }
 }
-

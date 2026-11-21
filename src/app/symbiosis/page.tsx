@@ -1,369 +1,396 @@
 'use client';
 
 // ==============================================================================
-// Module D: BioClaira Pyrolysis Valorization & Industrial Symbiosis Hub
-// Physico-chemical simulator for Date Pits/Grignons & Geospatial Synergies Map
+// BioClaira Module (Pack Gold Feature) - Separate Industrial Waste Audit
+// Evaluates industrial & agro-industrial waste streams independently from
+// core STEG/CBAM calculations, proposing circular valorization & recycling paths.
 // ==============================================================================
 
 import React, { useState } from 'react';
-import { useTranslation } from '@/lib/i18n/use-translation';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useAudit, WasteStreamType } from '@/lib/audit/audit-context';
 import { SectionHeader } from '@/components/layout/SectionHeader';
-import { FALLBACK_ORGANIZATIONS, FALLBACK_WASTE_LISTINGS, FALLBACK_SYMBIO_MATCHES } from '@/lib/supabase/fallback-data';
 import { simulateBioClairaValorization } from '@/lib/engine/bioclaira-simulator';
-import { 
-  Recycle, 
-  Flame, 
-  MapPin, 
-  Sparkles, 
-  TrendingUp, 
-  ArrowRight, 
-  Layers, 
-  Sliders, 
-  CheckCircle2, 
-  Compass, 
-  ShieldCheck 
-} from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 
-export default function SymbiosisPage() {
-  const { t, locale, persona } = useTranslation();
-  const org = FALLBACK_ORGANIZATIONS[persona] || FALLBACK_ORGANIZATIONS.tozeur;
+const WASTE_STREAM_OPTIONS: {
+  value: WasteStreamType;
+  label: string;
+  simType: 'olive_pomace' | 'date_pits' | 'margines' | 'metal_shavings' | 'hdpe_plastic';
+  proposals: { title: string; detail: string; marketRole: string }[];
+}[] = [
+  {
+    value: 'olive_pomace',
+    label: "Grignons d'olive & résidus oléicoles",
+    simType: 'olive_pomace',
+    proposals: [
+      {
+        title: 'Biocombustible industriel (Pellets / Briquettes)',
+        detail: 'Substitution directe du fuel lourd ou du gaz naturel dans les chaudières industrielles (baisse Scope 1 CBAM).',
+        marketRole: 'Énergie thermique décarbonée',
+      },
+      {
+        title: 'Biochar & amendement agronomique',
+        detail: 'Séquestration stable du carbone organique et commercialisation vers la filière agricole.',
+        marketRole: 'Revenus circulaires & crédits carbone',
+      },
+    ],
+  },
+  {
+    value: 'date_pits',
+    label: 'Noyaux de dattes & sous-produits phoenicicoles',
+    simType: 'date_pits',
+    proposals: [
+      {
+        title: 'Charbon actif & biocarbone industriel',
+        detail: 'Valorisation thermochimique produisant un biocarbone à haute valeur marchande substituant les intrants fossiles importés.',
+        marketRole: 'Substitut d’importation en devises',
+      },
+      {
+        title: 'Syngas énergétique interne',
+        detail: 'Récupération de gaz de synthèse pour auto-consommation thermique du site.',
+        marketRole: 'Réduction facture énergétique',
+      },
+    ],
+  },
+  {
+    value: 'olive_mill_wastewater',
+    label: 'Margines & effluents agro-industriels liquides',
+    simType: 'margines',
+    proposals: [
+      {
+        title: 'Récupération polyphénols & méthanisation',
+        detail: 'Extraction de molécules à haute valeur ajoutée et production de biogaz réduisant les rejets en bassins.',
+        marketRole: 'Élimination du méthane fugitif',
+      },
+    ],
+  },
+  {
+    value: 'metal_scrap',
+    label: "Copeaux métalliques, chutes d'acier ou aluminium",
+    simType: 'metal_shavings',
+    proposals: [
+      {
+        title: 'Refonte en boucle fermée (Fonderies locales)',
+        detail: 'Tri par alliage et réinjection vers les aciéries électriques nationales : baisse drastique du facteur Scope 3 CBAM.',
+        marketRole: 'Intrant recyclé bas-carbone',
+      },
+    ],
+  },
+  {
+    value: 'plastic_scrap',
+    label: 'Chutes polymères, emballages & plastiques industriels',
+    simType: 'hdpe_plastic',
+    proposals: [
+      {
+        title: 'Granulation mécanique & régénération matière',
+        detail: 'Broyage, lavage et extrusion en granulés recyclés pour réintégration dans les emballages techniques.',
+        marketRole: 'Économie matière & revente B2B',
+      },
+    ],
+  },
+];
 
-  // Simulator state
-  const [wasteType, setWasteType] = useState<'date_pits' | 'olive_pomace' | 'metal_shavings'>(
-    persona === 'tozeur' ? 'date_pits' : persona === 'sfax' ? 'olive_pomace' : 'metal_shavings'
-  );
-  const [tonnage, setTonnage] = useState(persona === 'tozeur' ? 650 : persona === 'sfax' ? 3400 : 180);
+export default function BioClairaPage() {
+  const { subscriptionPlan, setSubscriptionPlan } = useAuth();
+  const { auditData, updateAuditData } = useAudit();
+
   const [pyrolysisTemp, setPyrolysisTemp] = useState(650);
-  const [activationMethod, setActivationMethod] = useState<'steam' | 'h3po4' | 'koh'>('h3po4');
+  const [activationMethod, setActivationMethod] = useState<'steam' | 'h3po4'>('h3po4');
 
-  // BioClaira Simulation Result
-  const bioResult = simulateBioClairaValorization({
-    wasteType,
-    rawTonnage: tonnage,
-    pyrolysisTempC: pyrolysisTemp,
-    activationMethod,
-  });
+  const isGold = subscriptionPlan === 'gold';
+  const monthlyTons = auditData.wasteMonthlyTons;
+  const annualTons = monthlyTons * 12;
+  const selectedMeta =
+    WASTE_STREAM_OPTIONS.find((w) => w.value === auditData.wasteType) || WASTE_STREAM_OPTIONS[0];
 
-  // Tunisian Industrial Zones for the Interactive 3D Geospatial Map
-  const industrialZones = [
-    { name: 'Tozeur (Oasis)', lat: 33.9197, lng: 8.1335, waste: '650t Noyaux Dattes', valorization: 'Charbon Actif' },
-    { name: 'Sfax (Thyna)', lat: 34.6852, lng: 10.6984, waste: '3400t Grignons & Margines', valorization: 'Biocombustible' },
-    { name: 'Ben Arous (El Mghira)', lat: 36.7214, lng: 10.2285, waste: '180t Copeaux Acier CNC', valorization: 'Recyclage Métal' },
-    { name: 'Bizerte (Zone Franche)', lat: 37.2746, lng: 9.8739, waste: 'Plastiques & Électronique', valorization: 'Pyrolyse Plastique' },
-    { name: 'Gabès (Zone Chimique)', lat: 33.8815, lng: 10.0982, waste: 'Vapeur & Phosphogypses', valorization: 'Matériaux' },
-  ];
+  const hasWaste = annualTons > 0;
+
+  const bioResult = hasWaste
+    ? simulateBioClairaValorization({
+        wasteType: selectedMeta.simType,
+        rawTonnage: annualTons,
+        moisturePct: auditData.moisturePercent > 0 ? auditData.moisturePercent : undefined,
+        pyrolysisTempC: pyrolysisTemp,
+        activationMethod,
+      })
+    : null;
+
+  const annualDisposalSavingsTnd = Math.round(annualTons * auditData.disposalCostTndPerTon);
 
   return (
     <div className="space-y-6">
-      {/* Section Intelligence Header */}
       <SectionHeader
-        title={t.symbiosis.title}
-        badge="BioClaira Thermochimie"
-        badgeColor="bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-        objective="Simuler la pyrolyse contrôlée et l'activation des sous-produits agro-industriels tunisiens (noyaux de dattes, grignons d'olive) pour produire du charbon actif à haute valeur marchande et cartographier les flux de symbiose entre zones industrielles."
+        title="BioClaira — Audit Séparé des Déchets & Revenus Circulaires"
+        badge="Option Pack Gold"
+        badgeColor="bg-amber-500/10 text-amber-300 border-amber-500/30"
+        objective="Auditer séparément vos flux de rejets industriels ou agro-industriels afin d'identifier des filières de recyclage, de valorisation matière/énergie et de génération de revenus circulaires."
         inputs={[
-          'Gisement de biomasse disponible (tonnes brutes/an)',
-          'Taux d\'humidité et température de consigne du réacteur (°C)',
-          'Agent d\'activation (vapeur d\'eau, H₃PO₄ ou KOH)'
+          'Nature du gisement résiduel généré par votre usine',
+          'Volume mensuel ou annuel disponible (tonnes)',
+          'Taux d’humidité et coût actuel de mise en décharge (TND/t)',
         ]}
         deliverables={[
-          'Rendement massique en charbon actif et bio-huile valorisable',
-          'Surface spécifique BET estimée (m²/g) et indice d\'iode',
-          'Rentabilité financière annuelle nette générée (TND/an)',
-          'Bilan carbone net de séquestration et de méthane évité (tCO₂e)'
+          'Propositions de recyclage et de valorisation adaptées au flux',
+          'Estimation des revenus circulaires nets et économies de décharge',
+          'Impact optionnel sur votre bilan carbone global (Scope 1 & Scope 3)',
         ]}
-        regulation="Certification Biochar EBC, Mécanisme de Crédits Carbone Volontaires (VCS) & Cadre Déchets ANPE"
+        regulation="Économie Circulaire, Cadre ANPE Déchets, GHG Protocol Scope 1/3 & Certification Biochar EBC"
       />
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-          <Recycle className="h-6 w-6 text-emerald-400" />
-          <span>{t.symbiosis.title}</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">
-          {t.symbiosis.subtitle} • {org.name_fr}
-        </p>
-      </div>
 
-      {/* BioClaira Thermochemical Simulator Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Controls */}
-        <div className="rounded-2xl border border-white/10 bg-gray-900/60 p-6 space-y-5">
-          <div className="flex items-center gap-2">
-            <Flame className="h-5 w-5 text-emerald-400" />
-            <h2 className="text-sm font-bold text-white">
-              {t.symbiosis.bioclairaModelTitle}
-            </h2>
+      {/* Gold Feature Plan Notice / Upgrade Gate */}
+      {!isGold ? (
+        <div className="rounded-2xl border border-amber-500/35 bg-[#0D1322] p-6 sm:p-8 space-y-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-2.5 max-w-2xl">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-amber-400 font-semibold">
+                Fonctionnalité Additionnelle • Pack Gold
+              </div>
+              <h2 className="text-xl font-bold text-white">
+                Module optionnel BioClaira : transformez vos rejets en revenus circulaires
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                L&apos;audit des déchets est volontairement séparé de votre suivi électrique STEG et de votre déclaration CBAM de base. Activez l&apos;option Pack Gold pour analyser vos sous-produits (agro-biomasse, chutes métalliques, polymères) et calculer leur potentiel de valorisation marchande ou de substitution énergétique.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs text-slate-300">
+                <div className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Audit séparé sans alourdir la saisie STEG</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Scénarios de recyclage &amp; valorisation</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Lien optionnel vers le bilan Scope 1/3</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0">
+              <button
+                type="button"
+                onClick={() => setSubscriptionPlan('gold')}
+                className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs px-5 py-3 transition-all"
+              >
+                <span>Activer l&apos;option Pack Gold (BioClaira)</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-3 text-xs">
+          <div className="text-slate-200">
+            <strong className="text-emerald-400">Pack Gold actif :</strong> l&apos;audit séparé des déchets BioClaira est activé pour votre usine.
+          </div>
+          <span className="font-mono text-[11px] text-emerald-400">Statut : Actif</span>
+        </div>
+      )}
+
+      {/* Main Waste Audit Workspace (Visible once Gold activated, or previewable cleanly at 0) */}
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${!isGold ? 'opacity-60 pointer-events-none select-none' : ''}`}>
+        {/* Left: Waste Stream Inputs (Starts at 0) */}
+        <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-6 space-y-5">
+          <div>
+            <h2 className="text-sm font-bold text-white">Déclaration du flux de déchet</h2>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Renseignez les quantités réelles générées par votre site (0 par défaut).
+            </p>
           </div>
 
-          {/* Substrate Selector */}
           <div className="space-y-1.5">
-            <label className="text-xs text-gray-300 font-medium">Type de Gisement Résiduel</label>
+            <label className="block text-xs text-slate-300 font-medium">Nature du rejet industriel</label>
             <select
-              value={wasteType}
-              onChange={(e) => {
-                const val = e.target.value as any;
-                setWasteType(val);
-                setTonnage(val === 'date_pits' ? 650 : val === 'olive_pomace' ? 3400 : 180);
-              }}
-              className="w-full rounded-xl border border-white/10 bg-gray-800 p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500/50"
+              value={auditData.wasteType}
+              onChange={(e) => updateAuditData({ wasteType: e.target.value as WasteStreamType })}
+              className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
             >
-              <option value="date_pits">🌴 Noyaux de Dattes Deglet Nour (Tozeur / Kébili)</option>
-              <option value="olive_pomace">🫒 Grignons d'Olive Humides (Sfax / Sahel)</option>
-              <option value="metal_shavings">⚙️ Copeaux d'Acier d'Usinage CNC (Ben Arous)</option>
+              {WASTE_STREAM_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Tonnage Slider */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-300">{t.symbiosis.rawBiomass}</span>
-              <span className="font-mono text-emerald-400 font-bold">{tonnage} tonnes/an</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Volume mensuel (tonnes/mois)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={auditData.wasteMonthlyTons || ''}
+                onChange={(e) =>
+                  updateAuditData({ wasteMonthlyTons: Math.max(0, Number(e.target.value) || 0) })
+                }
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
             </div>
-            <input
-              type="range"
-              min="50"
-              max="5000"
-              step="50"
-              value={tonnage}
-              onChange={(e) => setTonnage(parseInt(e.target.value))}
-              className="w-full accent-emerald-500 bg-gray-800 rounded-lg cursor-pointer h-2"
-            />
-          </div>
 
-          {/* Temperature Slider */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-300">{t.symbiosis.pyrolysisTemp}</span>
-              <span className="font-mono text-emerald-400 font-bold">{pyrolysisTemp} °C</span>
-            </div>
-            <input
-              type="range"
-              min="450"
-              max="850"
-              step="25"
-              value={pyrolysisTemp}
-              onChange={(e) => setPyrolysisTemp(parseInt(e.target.value))}
-              className="w-full accent-emerald-500 bg-gray-800 rounded-lg cursor-pointer h-2"
-            />
-            <div className="flex justify-between text-[10px] text-gray-500 font-mono">
-              <span>450°C (Biochar)</span>
-              <span>650°C (Optimal CA)</span>
-              <span>850°C (Gazéification)</span>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Humidité (%)</label>
+              <input
+                type="number"
+                min="0"
+                max="95"
+                value={auditData.moisturePercent || ''}
+                onChange={(e) =>
+                  updateAuditData({ moisturePercent: Math.min(95, Math.max(0, Number(e.target.value) || 0)) })
+                }
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
             </div>
           </div>
 
-          {/* Activation Agent */}
-          <div className="space-y-1.5">
-            <label className="text-xs text-gray-300 font-medium">{t.symbiosis.activationType}</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setActivationMethod('h3po4')}
-                className={`rounded-xl border p-2 text-xs font-semibold transition-all ${
-                  activationMethod === 'h3po4'
-                    ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                    : 'border-white/10 bg-gray-800 text-gray-400 hover:text-white'
-                }`}
-              >
-                H₃PO₄ (Chimique)
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivationMethod('steam')}
-                className={`rounded-xl border p-2 text-xs font-semibold transition-all ${
-                  activationMethod === 'steam'
-                    ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                    : 'border-white/10 bg-gray-800 text-gray-400 hover:text-white'
-                }`}
-              >
-                Vapeur (Physique)
-              </button>
-            </div>
+          <div>
+            <label className="block text-[11px] text-slate-400 mb-1">
+              Coût actuel d&apos;évacuation / décharge (TND / tonne)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={auditData.disposalCostTndPerTon || ''}
+              onChange={(e) =>
+                updateAuditData({ disposalCostTndPerTon: Math.max(0, Number(e.target.value) || 0) })
+              }
+              placeholder="0"
+              className="w-full rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+            />
           </div>
+
+          {(auditData.wasteType === 'date_pits' ||
+            auditData.wasteType === 'olive_pomace' ||
+            auditData.wasteType === 'olive_mill_wastewater') && (
+            <div className="space-y-3 pt-2 border-t border-white/[0.08]">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Température de conversion</span>
+                <span className="font-mono text-emerald-400 font-bold">{pyrolysisTemp} °C</span>
+              </div>
+              <input
+                type="range"
+                min="450"
+                max="850"
+                step="25"
+                value={pyrolysisTemp}
+                onChange={(e) => setPyrolysisTemp(parseInt(e.target.value, 10))}
+                className="w-full accent-emerald-500 bg-black/40 rounded-lg cursor-pointer h-2"
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActivationMethod('h3po4')}
+                  className={`rounded-lg border p-2 text-[11px] font-semibold transition-all ${
+                    activationMethod === 'h3po4'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                      : 'border-white/[0.08] bg-black/30 text-slate-400'
+                  }`}
+                >
+                  Voie Chimique
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivationMethod('steam')}
+                  className={`rounded-lg border p-2 text-[11px] font-semibold transition-all ${
+                    activationMethod === 'steam'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                      : 'border-white/[0.08] bg-black/30 text-slate-400'
+                  }`}
+                >
+                  Voie Vapeur
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Physico-Chemical Yields & Outputs */}
-        <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-gray-900/60 p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-emerald-400" />
-              <span>{t.symbiosis.outputsTitle}</span>
-            </h2>
-            <span className="font-mono text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-              Rendement Massique: {bioResult.activatedCarbonYieldPct}%
+        {/* Right: Results & Recycling Proposals */}
+        <div className="lg:col-span-2 rounded-2xl glass-panel-elevated border border-white/[0.08] p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+            <div>
+              <h2 className="text-sm font-bold text-white">Résultats de l&apos;audit circulaire</h2>
+              <p className="text-[11px] text-slate-400">
+                Base annuelle : <span className="font-mono text-white">{annualTons.toLocaleString('fr-TN')} tonnes/an</span>
+              </p>
+            </div>
+            <span className="font-mono text-xs text-emerald-400">
+              Rendement : {bioResult ? `${bioResult.activatedCarbonYieldPct}%` : '0%'}
             </span>
           </div>
 
-          {/* 4 Yield Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-white/5 bg-gray-800/60 p-3.5 space-y-1">
-              <div className="text-[11px] text-gray-400">{t.symbiosis.activatedCarbon}</div>
-              <div className="text-xl font-bold font-mono text-white">
-                {bioResult.activatedCarbonTons} <span className="text-xs text-gray-400">tonnes</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-white/[0.06] bg-black/25 p-3.5">
+              <div className="text-[11px] text-slate-400">Matière valorisée</div>
+              <div className="text-xl font-bold font-mono text-white mt-1 tabular-nums">
+                {bioResult ? (bioResult.activatedCarbonTons + bioResult.biocharTons).toFixed(1) : '0'}{' '}
+                <span className="text-xs font-normal text-slate-400">t/an</span>
               </div>
-              <div className="text-[10px] text-emerald-400">Substitut fossile</div>
             </div>
 
-            <div className="rounded-xl border border-white/5 bg-gray-800/60 p-3.5 space-y-1">
-              <div className="text-[11px] text-gray-400">{t.symbiosis.betSurface}</div>
-              <div className="text-xl font-bold font-mono text-emerald-400">
-                {bioResult.estimatedBetSurfaceAreaM2g} <span className="text-xs text-gray-400">m²/g</span>
+            <div className="rounded-xl border border-white/[0.06] bg-black/25 p-3.5">
+              <div className="text-[11px] text-slate-400">Revenu circulaire net</div>
+              <div className="text-xl font-bold font-mono text-emerald-400 mt-1 tabular-nums">
+                {bioResult ? bioResult.netAnnualProfitTnd.toLocaleString('fr-TN') : '0'}{' '}
+                <span className="text-xs font-normal text-slate-400">TND/an</span>
               </div>
-              <div className="text-[10px] text-gray-400">Microporosité élevée</div>
             </div>
 
-            <div className="rounded-xl border border-white/5 bg-gray-800/60 p-3.5 space-y-1">
-              <div className="text-[11px] text-gray-400">{t.symbiosis.annualProfit}</div>
-              <div className="text-xl font-bold font-mono text-white">
-                {bioResult.netAnnualProfitTnd.toLocaleString('fr-TN')} <span className="text-xs text-gray-400">TND</span>
+            <div className="rounded-xl border border-white/[0.06] bg-black/25 p-3.5">
+              <div className="text-[11px] text-slate-400">Économie décharge</div>
+              <div className="text-xl font-bold font-mono text-white mt-1 tabular-nums">
+                {annualDisposalSavingsTnd.toLocaleString('fr-TN')}{' '}
+                <span className="text-xs font-normal text-slate-400">TND/an</span>
               </div>
-              <div className="text-[10px] text-emerald-400">@ 7,500 TND/t CA</div>
             </div>
 
-            <div className="rounded-xl border border-white/5 bg-gray-800/60 p-3.5 space-y-1">
-              <div className="text-[11px] text-gray-400">{t.symbiosis.avoidedCo2}</div>
-              <div className="text-xl font-bold font-mono text-emerald-400">
-                {bioResult.netAvoidedTco2e.toLocaleString('fr-TN')} <span className="text-xs text-gray-400">tCO₂e</span>
-              </div>
-              <div className="text-[10px] text-emerald-300">Méthane + Fossile évité</div>
-            </div>
-          </div>
-
-          {/* Circular Mass Balance Flow (Sankey Concept) */}
-          <div className="rounded-xl border border-white/5 bg-gray-800/40 p-4 space-y-3">
-            <div className="text-xs font-bold text-gray-300">Bilan de Matière & Flux Énergétique :</div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-              <div className="rounded-lg bg-gray-900/80 p-3 border border-white/5">
-                <div className="text-[10px] text-gray-400">INTRANT BRUT</div>
-                <div className="font-mono font-bold text-sm text-white mt-1">{tonnage} t Déchets</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">Matière sèche: {bioResult.dryTonnage} t</div>
-              </div>
-              <div className="flex items-center justify-center text-emerald-400">
-                <ArrowRight className="h-6 w-6 hidden sm:block" />
-              </div>
-              <div className="rounded-lg bg-emerald-950/40 p-3 border border-emerald-500/30">
-                <div className="text-[10px] text-emerald-400 font-bold">PRODUITS VALORISÉS</div>
-                <div className="font-mono font-bold text-sm text-emerald-300 mt-1">
-                  {bioResult.activatedCarbonTons} t Charbon Actif
-                </div>
-                <div className="text-[10px] text-emerald-200/80 mt-0.5">
-                  + {bioResult.syngasBioOilMwh.toFixed(0)} MWh Énergie Recyclée
-                </div>
+            <div className="rounded-xl border border-white/[0.06] bg-black/25 p-3.5">
+              <div className="text-[11px] text-slate-400">CO₂e évité (optionnel)</div>
+              <div className="text-xl font-bold font-mono text-emerald-400 mt-1 tabular-nums">
+                {bioResult ? bioResult.netAvoidedTco2e.toLocaleString('fr-TN') : '0'}{' '}
+                <span className="text-xs font-normal text-slate-400">tCO₂e/an</span>
               </div>
             </div>
           </div>
 
-          {/* CAPEX, VAN 7 ans, TRI & Subvention ANME FTE */}
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                Viabilité Financière &amp; CAPEX Unité Industrielle BioClaira
-              </span>
-              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                Subvention ANME FTE Matériel 20% Déduite
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
-                <div className="text-[10px] text-gray-400">CAPEX Subventionné</div>
-                <div className="font-mono font-bold text-sm text-white mt-0.5">
-                  {bioResult.anmeSubsidizedCapexTnd.toLocaleString('fr-TN')} TND
-                </div>
-                <div className="text-[9px] text-gray-500">Brut: {bioResult.totalCapexTnd.toLocaleString()} TND</div>
-              </div>
+          {/* Proposals for Recycling & Circular Valorization */}
+          <div className="space-y-3 pt-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              Propositions de recyclage et valorisation adaptées à votre flux
+            </h3>
 
-              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
-                <div className="text-[10px] text-gray-400">VAN sur 7 ans (8.5%)</div>
-                <div className="font-mono font-bold text-sm text-emerald-400 mt-0.5">
-                  +{bioResult.npv7YearsTnd.toLocaleString('fr-TN')} TND
-                </div>
-                <div className="text-[9px] text-emerald-300/80">Valeur Actuelle Nette</div>
+            {!hasWaste ? (
+              <div className="rounded-xl border border-dashed border-white/[0.1] bg-black/20 p-5 text-center text-xs text-slate-400">
+                Saisissez un volume mensuel supérieur à 0 tonne pour générer les scénarios chiffrés de valorisation.
               </div>
-
-              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
-                <div className="text-[10px] text-gray-400">TRI (Taux Rentabilité)</div>
-                <div className="font-mono font-bold text-sm text-emerald-400 mt-0.5">
-                  {bioResult.irrPercent}%
-                </div>
-                <div className="text-[9px] text-gray-500">Rentabilité Interne</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {selectedMeta.proposals.map((prop) => (
+                  <div
+                    key={prop.title}
+                    className="rounded-xl border border-white/[0.08] bg-black/30 p-4 space-y-1.5"
+                  >
+                    <div className="text-[10px] font-mono text-emerald-400 uppercase font-semibold">
+                      {prop.marketRole}
+                    </div>
+                    <div className="text-xs font-bold text-white">{prop.title}</div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{prop.detail}</p>
+                  </div>
+                ))}
               </div>
-
-              <div className="rounded-lg bg-gray-900/80 p-2.5 border border-white/5">
-                <div className="text-[10px] text-gray-400">Délai Payback</div>
-                <div className="font-mono font-bold text-sm text-white mt-0.5">
-                  {bioResult.paybackYears} ans
-                </div>
-                <div className="text-[9px] text-gray-500">Amortissement net</div>
-              </div>
-            </div>
-
-            {/* Process & Environmental Guardrails */}
-            <div className="text-[11px] text-gray-400 border-t border-white/5 pt-2 flex flex-wrap gap-4">
-              {bioResult.requiresPreDrying && (
-                <span className="text-amber-400">
-                  ⚠️ Séchage thermique amont requis : {bioResult.dryingThermalMwh} MWh pour ramener l'humidité à 12%.
-                </span>
-              )}
-              {bioResult.acidEffluentVolumeM3 > 0 && (
-                <span className="text-blue-300">
-                  💧 Eaux de lavage acide : {bioResult.acidEffluentVolumeM3} m³ (traitement chaux : {bioResult.effluentTreatmentCostTnd.toLocaleString()} TND/an).
-                </span>
-              )}
-              <span className="text-gray-300">
-                🚚 Émissions transport (120 km) : {bioResult.transportEmissionsTco2e} tCO₂e • Agréments ANPE requis.
-              </span>
-            </div>
+            )}
           </div>
-        </div>
-      </div>
 
-      {/* Geospatial 3D Industrial Symbiosis Map */}
-      <div className="rounded-2xl border border-white/10 bg-gray-900/60 p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Compass className="h-4 w-4 text-emerald-400" />
-              <span>{t.symbiosis.mapTitle}</span>
-            </h2>
-            <p className="text-xs text-gray-400">
-              Interconnexion logistique des zones industrielles tunisiennes et routes de symbiose active
-            </p>
+          {/* Integration Note with Global Formula */}
+          <div className="rounded-xl border border-white/[0.06] bg-black/25 p-3.5 text-[11px] text-slate-400 leading-relaxed">
+            <strong className="text-slate-200">Rôle dans le bilan global :</strong> les tonnages valorisés ci-dessus sont calculés séparément afin de ne pas fausser vos obligations réglementaires STEG et CBAM. En cas de réutilisation thermique interne (substitution de combustibles Scope 1), les émissions évitées peuvent être intégrées comme crédit de réduction dans votre bilan RSE/ISO 14064-1.
           </div>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
-            5 Pôles Industriels Connectés
-          </span>
-        </div>
-
-        {/* Interactive Map Canvas Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {industrialZones.map((zone) => (
-            <div
-              key={zone.name}
-              className="rounded-xl border border-white/5 bg-gray-800/60 p-4 space-y-2 hover:border-emerald-500/40 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-emerald-400" />
-                  {zone.name}
-                </span>
-                <span className="font-mono text-[10px] text-gray-400">
-                  {zone.lat.toFixed(2)}°N, {zone.lng.toFixed(2)}°E
-                </span>
-              </div>
-              <div className="text-[11px] text-gray-300">
-                Gisement : <span className="font-medium text-amber-300">{zone.waste}</span>
-              </div>
-              <div className="text-[11px] text-gray-400">
-                Filière : <span className="font-medium text-emerald-400">{zone.valorization}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
   );
 }
-

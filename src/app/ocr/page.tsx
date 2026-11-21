@@ -1,318 +1,395 @@
 'use client';
 
 // ==============================================================================
-// Module A: Multimodal Document AI Inspector for STEG MT/HT Invoices
-// Split-screen verification: Invoice scanning view on left, editable form on right
+// Module OCR & Import: Official Document Scanner for STEG Invoices & CSV History
+// Zero pre-filled samples, zero purple/violet chrome, saves directly to AuditContext.
 // ==============================================================================
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/i18n/use-translation';
+import { useAudit } from '@/lib/audit/audit-context';
 import { SectionHeader } from '@/components/layout/SectionHeader';
-import { 
-  FileSearch, 
-  Upload, 
-  CheckCircle2, 
-  Scan, 
-  Sparkles, 
-  AlertTriangle, 
-  ShieldCheck, 
-  Zap, 
-  Save, 
-  FileText 
-} from 'lucide-react';
+import { StegTariffType } from '@/types';
+import { Upload, CheckCircle2, AlertCircle, Save } from 'lucide-react';
 
 export default function OcrPage() {
-  const { t, locale, persona } = useTranslation();
+  const { t } = useTranslation();
+  const { addMonthlyBill } = useAudit();
 
   const [isScanning, setIsScanning] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
 
-  // Editable Form State
+  // Clean zero-initialized form state
   const [formData, setFormData] = useState({
-    districtSteg: 'Mghira / Megrine',
-    billingMonth: 10,
-    billingYear: 2026,
-    tariffRegime: 'MT_POSTES_HORAIRES',
-    pSouscriteKva: 500,
-    pMaxAppeleeKva: 512,
-    kwhJour: 82000,
-    kwhPointe: 14500,
-    kwhSoir: 16000,
-    kwhNuit: 21500,
-    kvarhTotal: 105000,
-    cosPhi: 0.748,
-    reactivePenaltyTnd: 3845.25,
-    powerOverrunPenaltyTnd: 300.0,
-    totalHtTnd: 41250.0,
-    tvaTnd: 7837.5,
-    totalTtcTnd: 50207.5,
-    confidenceScore: 0.98,
+    districtSteg: '',
+    billingMonth: new Date().getMonth() + 1,
+    billingYear: new Date().getFullYear(),
+    tariffRegime: 'MT_POSTES_HORAIRES' as StegTariffType,
+    pSouscriteKva: 0,
+    pMaxAppeleeKva: 0,
+    kwhJour: 0,
+    kwhPointe: 0,
+    kwhSoir: 0,
+    kwhNuit: 0,
+    kvarhTotal: 0,
+    cosPhi: 0,
+    reactivePenaltyTnd: 0,
+    powerOverrunPenaltyTnd: 0,
+    totalTtcTnd: 0,
+    confidenceScore: 0,
   });
 
-  // Load sample invoice
-  const handleLoadSample = async () => {
-    setIsScanning(true);
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name);
+    setScanError(null);
     setIsSaved(false);
+    setIsScanning(true);
+
     try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result || '');
+          resolve(result.includes(',') ? result.split(',')[1] : result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
       const res = await fetch('/api/ocr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isSample: true }),
+        body: JSON.stringify({
+          imageBase64: base64,
+          mimeType: file.type || 'application/pdf',
+        }),
       });
       const data = await res.json();
-      if (data.ok && data.extracted) {
-        setFormData(data.extracted);
+      if (!res.ok || !data.ok || !data.extracted) {
+        setScanError(
+          data.error ||
+            "L'extraction OCR n'a pas pu lire ce fichier. Vous pouvez vérifier ou compléter les champs manuellement à droite."
+        );
+      } else {
+        const ext = data.extracted;
+        setFormData({
+          districtSteg: ext.districtSteg || '',
+          billingMonth: Number(ext.billingMonth) || new Date().getMonth() + 1,
+          billingYear: Number(ext.billingYear) || new Date().getFullYear(),
+          tariffRegime: (ext.tariffRegime as StegTariffType) || 'MT_POSTES_HORAIRES',
+          pSouscriteKva: Number(ext.pSouscriteKva) || 0,
+          pMaxAppeleeKva: Number(ext.pMaxAppeleeKva) || 0,
+          kwhJour: Number(ext.kwhJour) || 0,
+          kwhPointe: Number(ext.kwhPointe) || 0,
+          kwhSoir: Number(ext.kwhSoir) || 0,
+          kwhNuit: Number(ext.kwhNuit) || 0,
+          kvarhTotal: Number(ext.kvarhTotal) || 0,
+          cosPhi: Number(ext.cosPhi) || 0,
+          reactivePenaltyTnd: Number(ext.reactivePenaltyTnd) || 0,
+          powerOverrunPenaltyTnd: Number(ext.powerOverrunPenaltyTnd) || 0,
+          totalTtcTnd: Number(ext.totalTtcTnd) || 0,
+          confidenceScore: Number(ext.confidenceScore) || 0,
+        });
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setScanError('Erreur réseau lors de la lecture du document.');
     } finally {
-      setTimeout(() => setIsScanning(false), 900);
+      setIsScanning(false);
     }
   };
 
-  const handleSaveToDb = () => {
+  const handleSaveToFactory = () => {
+    addMonthlyBill({
+      month: formData.billingMonth,
+      year: formData.billingYear,
+      districtSteg: formData.districtSteg,
+      tariffRegime: formData.tariffRegime,
+      pSouscriteKva: formData.pSouscriteKva,
+      pMaxAppeleeKva: formData.pMaxAppeleeKva,
+      kwhJour: formData.kwhJour,
+      kwhPointe: formData.kwhPointe,
+      kwhSoir: formData.kwhSoir,
+      kwhNuit: formData.kwhNuit,
+      kvarhTotal: formData.kvarhTotal,
+      cosPhi: formData.cosPhi,
+      reactivePenaltyTnd: formData.reactivePenaltyTnd,
+      powerOverrunPenaltyTnd: formData.powerOverrunPenaltyTnd,
+      totalTtcTnd: formData.totalTtcTnd,
+      source: fileName ? 'ocr' : 'manual',
+    });
     setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 4000);
+    setTimeout(() => setIsSaved(false), 3500);
   };
+
+  const totalKwh = formData.kwhJour + formData.kwhPointe + formData.kwhSoir + formData.kwhNuit;
 
   return (
     <div className="space-y-6">
-      {/* Module Intelligence Header */}
       <SectionHeader
-        title={t.ocr.title}
-        badge="Document AI Gemini 2.5"
-        badgeColor="bg-purple-500/10 text-purple-500 border-purple-500/20"
-        objective="Vous pouvez téléverser votre propre facture STEG MT (PDF ou photo smartphone) ou tester l'extraction sur des factures types tunisiennes. Gemini 2.5 Flash Vision extrait automatiquement chaque tranche horaire, calcule le cos φ et vérifie la cohérence comptable."
+        title="Import & Scanner de Documents Officiels (STEG)"
+        badge="OCR Vision"
+        badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+        objective="Téléversez vos factures STEG officielles (PDF ou photo) pour extraire automatiquement les tranches horaires, la puissance et le cos φ, puis enregistrez-les dans votre usine."
         inputs={[
-          'Facture STEG Moyenne Tension (format PDF, scan ou photo)',
-          'Nomenclatures d\'achats fournisseurs (fichiers CSV / Excel)',
-          'Possibilité de tester immédiatement via les exemples réels préchargés'
+          'Facture STEG Moyenne ou Haute Tension (PDF, JPG, PNG)',
+          'Ou saisie manuelle directe dans le formulaire de vérification',
         ]}
         deliverables={[
-          'Extraction structurée des 4 postes horaires (Jour, Pointe, Soir, Nuit)',
-          'Détection des dépassements de puissance souscrite (kVA)',
-          'Calcul du cos φ et de la redevance d\'énergie réactive (TND)',
-          'Formulaire d\'ingénierie modifiable et synchronisé avec le cockpit'
+          'Extraction des 4 tranches horaires (Jour, Pointe, Soir, Nuit)',
+          'Synchronisation directe avec le tableau de bord et le calcul CBAM',
         ]}
-        regulation="Spécifications de facturation STEG MT/HT, Décrets tarifaires de l'énergie en Tunisie"
+        regulation="Spécifications tarifaires STEG MT/HT • Conformité INPDP Tunisie"
       />
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <FileSearch className="h-6 w-6 text-purple-400" />
-            <span>{t.ocr.title}</span>
-          </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            {t.ocr.subtitle}
-          </p>
-        </div>
-
-        <button
-          onClick={handleLoadSample}
-          disabled={isScanning}
-          className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 transition-all shadow-md shrink-0"
-        >
-          <Sparkles className="h-4 w-4" />
-          <span>{isScanning ? 'Numérisation IA...' : t.ocr.sampleButton}</span>
-        </button>
-      </div>
-
-      {/* Split-Screen Canvas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Side: Invoice Document & Radar Scanning Canvas */}
-        <div className="rounded-2xl border border-white/10 bg-gray-900/60 p-6 space-y-4 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <span className="text-xs font-bold text-gray-300 flex items-center gap-2">
-              <Scan className="h-4 w-4 text-purple-400" />
-              Facture STEG Moyenne Tension (Bordereau Original)
-            </span>
-            <span className="font-mono text-[10px] text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold">
-              Gemini 2.5 Flash Vision
-            </span>
-          </div>
+        {/* Left: Document Upload Dropzone & Extracted Summary */}
+        <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-6 space-y-5 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <span className="text-xs font-bold text-white">Document Source</span>
+              <span className="font-mono text-[10px] text-slate-400">PDF • JPG • PNG</span>
+            </div>
 
-          {/* Interactive Document Mockup */}
-          <div className="relative rounded-xl border border-white/10 bg-[#0F172A] p-5 space-y-4 text-gray-300 font-mono text-[11px] shadow-inner">
-            {isScanning && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in">
-                <div className="h-10 w-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-2" />
-                <span className="text-xs text-purple-300 font-bold">{t.ocr.extracting}</span>
+            <label className="cursor-pointer flex flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.18] bg-black/30 hover:border-emerald-500/50 hover:bg-emerald-500/5 p-8 text-center transition-all">
+              <Upload className="h-6 w-6 text-emerald-400 mb-2" />
+              <div className="text-xs font-bold text-white">
+                {isScanning
+                  ? 'Extraction des données en cours...'
+                  : fileName
+                    ? `Fichier chargé : ${fileName}`
+                    : 'Cliquez pour importer une facture STEG'}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Aucun échantillon préchargé — importez uniquement vos propres documents officiels.
+              </p>
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                onChange={handleFileUpload}
+                disabled={isScanning}
+                className="hidden"
+              />
+            </label>
+
+            {scanError && (
+              <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{scanError}</span>
               </div>
             )}
 
-            {/* Document Header */}
-            <div className="flex justify-between items-start border-b border-white/10 pb-3">
-              <div>
-                <div className="text-xs font-bold text-white">SOCIÉTÉ TUNISIENNE DE L'ÉLECTRICITÉ ET DU GAZ</div>
-                <div className="text-[10px] text-gray-400">Direction Distribution • District {formData.districtSteg}</div>
+            {/* Live Summary Card of Current Values */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#0B111E] p-4 space-y-3 font-mono text-xs">
+              <div className="flex justify-between border-b border-white/[0.06] pb-2 text-slate-400">
+                <span>PÉRIODE : {String(formData.billingMonth).padStart(2, '0')}/{formData.billingYear}</span>
+                <span>TOTAL : {totalKwh.toLocaleString('fr-TN')} kWh</span>
               </div>
-              <div className="text-end">
-                <div className="text-[10px] text-gray-400">RÉGIME : <span className="text-emerald-400">{formData.tariffRegime}</span></div>
-                <div className="text-[10px] text-gray-400">PÉRIODE : {formData.billingMonth}/{formData.billingYear}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-slate-300">P. Souscrite : {formData.pSouscriteKva} kVA</div>
+                <div className="text-slate-300">P. Max : {formData.pMaxAppeleeKva} kVA</div>
+                <div className="text-amber-400">Pointe : {formData.kwhPointe.toLocaleString('fr-TN')} kWh</div>
+                <div className="text-slate-300">cos φ : {formData.cosPhi > 0 ? formData.cosPhi : '0.00'}</div>
               </div>
-            </div>
-
-            {/* Document Highlighted Zones */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-2.5 space-y-1">
-                <div className="text-[10px] text-purple-300 font-semibold">PUISSANCES (kVA)</div>
-                <div>Souscrite : <span className="text-white font-bold">{formData.pSouscriteKva}</span></div>
-                <div>Appelée : <span className="text-white font-bold">{formData.pMaxAppeleeKva}</span></div>
+              <div className="flex justify-between pt-2 border-t border-white/[0.06]">
+                <span className="text-slate-400">NET TTC :</span>
+                <span className="font-bold text-emerald-400">
+                  {formData.totalTtcTnd.toLocaleString('fr-TN')} TND
+                </span>
               </div>
-
-              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 space-y-1">
-                <div className="text-[10px] text-amber-300 font-semibold">TARIF POINTE STEG</div>
-                <div>Consommation : <span className="text-white font-bold">{formData.kwhPointe.toLocaleString()} kWh</span></div>
-                <div>Taux : 0.412 TND/kWh</div>
-              </div>
-            </div>
-
-            {/* Reactive Power Highlight */}
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 flex justify-between items-center text-xs">
-              <div>
-                <div className="text-[10px] text-red-300 font-semibold">ÉNERGIE RÉACTIVE &amp; COS PHI</div>
-                <div>kVARh Total : <span className="text-white font-bold">{formData.kvarhTotal.toLocaleString()}</span></div>
-              </div>
-              <div className="text-end">
-                <div className="text-base font-extrabold text-red-400">cos φ = {formData.cosPhi}</div>
-                <div className="text-[10px] text-red-200">Pénalité: {formData.reactivePenaltyTnd} TND</div>
-              </div>
-            </div>
-
-            {/* Financial Total */}
-            <div className="flex justify-between items-center pt-2 border-t border-white/10 text-xs">
-              <span className="text-gray-400">NET À PAYER TTC :</span>
-              <span className="text-base font-bold text-emerald-400">{formData.totalTtcTnd.toLocaleString('fr-TN')} TND</span>
             </div>
           </div>
 
-          {/* Anti-Hallucination Gate & INPDP Notice */}
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-3 space-y-1 text-xs">
-            <div className="flex items-center justify-between text-emerald-300 font-semibold">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                Vérification Arithmétique &amp; Anti-Hallucination
-              </span>
-              <span className="font-mono text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-                100% Cohérent
-              </span>
-            </div>
-            <p className="text-[10px] text-gray-400">
-              Total postes horaires (134 000 kWh) vérifié • cos φ calculé d'après P/Q (0.751) concorde avec le relevé (0.748).
-            </p>
-            <p className="text-[9px] text-gray-500 italic pt-1 border-t border-white/5">
-              Traitement conforme à la Loi n° 2004-63 (INPDP Tunisie) : Données chiffrées de bout en bout.
-            </p>
-          </div>
-
-          <div className="text-center text-xs text-gray-400">
-            {t.ocr.dropzoneDesc}
-          </div>
+          <p className="text-[10px] text-slate-500">
+            Conformité Loi n° 2004-63 (INPDP) : vos factures sont analysées sans stockage de données bancaires.
+          </p>
         </div>
 
-        {/* Right Side: Confidence-Scored Editable Form */}
-        <div className="rounded-2xl border border-white/10 bg-gray-900/60 p-6 space-y-5">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        {/* Right: Editable Verification Form */}
+        <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
             <div>
               <h2 className="text-sm font-bold text-white">{t.ocr.extractedFields}</h2>
-              <p className="text-[11px] text-gray-400">Vérifiez les grandeurs extraites avant synchronisation</p>
+              <p className="text-[11px] text-slate-400">
+                Vérifiez ou complétez les grandeurs avant d&apos;enregistrer dans votre usine
+              </p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-              <ShieldCheck className="h-4 w-4" />
-              <span>Score Confiance : {Math.round(formData.confidenceScore * 100)}%</span>
-            </div>
+            {formData.confidenceScore > 0 && (
+              <span className="text-xs text-emerald-400 font-mono font-bold">
+                Confiance : {Math.round(formData.confidenceScore * 100)}%
+              </span>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            {/* District */}
-            <div className="space-y-1">
-              <label className="text-gray-400 font-medium">District STEG</label>
+          <div className="grid grid-cols-2 gap-3.5 text-xs">
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">District STEG</label>
               <input
                 type="text"
                 value={formData.districtSteg}
                 onChange={(e) => setFormData({ ...formData, districtSteg: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-gray-800 p-2.5 text-white font-semibold focus:outline-none focus:border-purple-500/50"
+                placeholder="District"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* P_souscrite */}
-            <div className="space-y-1">
-              <label className="text-gray-400 font-medium">P. Souscrite (kVA)</label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Mois</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={formData.billingMonth}
+                  onChange={(e) => setFormData({ ...formData, billingMonth: parseInt(e.target.value, 10) || 1 })}
+                  className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Année</label>
+                <input
+                  type="number"
+                  value={formData.billingYear}
+                  onChange={(e) => setFormData({ ...formData, billingYear: parseInt(e.target.value, 10) || 2026 })}
+                  className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">P. Souscrite (kVA)</label>
               <input
                 type="number"
-                value={formData.pSouscriteKva}
+                min="0"
+                value={formData.pSouscriteKva || ''}
                 onChange={(e) => setFormData({ ...formData, pSouscriteKva: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/10 bg-gray-800 p-2.5 text-white font-mono focus:outline-none focus:border-purple-500/50"
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* kWh Jour */}
-            <div className="space-y-1">
-              <label className="text-gray-400 font-medium">kWh Jour (نهار)</label>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">P. Max Appelée (kVA)</label>
               <input
                 type="number"
-                value={formData.kwhJour}
+                min="0"
+                value={formData.pMaxAppeleeKva || ''}
+                onChange={(e) => setFormData({ ...formData, pMaxAppeleeKva: parseFloat(e.target.value) || 0 })}
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">kWh Jour</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.kwhJour || ''}
                 onChange={(e) => setFormData({ ...formData, kwhJour: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/10 bg-gray-800 p-2.5 text-white font-mono focus:outline-none focus:border-purple-500/50"
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* kWh Pointe */}
-            <div className="space-y-1">
-              <label className="text-gray-400 font-medium">kWh Pointe (ذروة)</label>
+            <div>
+              <label className="block text-[11px] text-amber-300 mb-1">kWh Pointe</label>
               <input
                 type="number"
-                value={formData.kwhPointe}
+                min="0"
+                value={formData.kwhPointe || ''}
                 onChange={(e) => setFormData({ ...formData, kwhPointe: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-amber-200 font-mono font-bold focus:outline-none focus:border-amber-500/50"
+                placeholder="0"
+                className="w-full rounded-xl border border-amber-500/30 bg-amber-500/5 p-2.5 text-amber-200 font-mono focus:outline-none focus:border-amber-500"
               />
             </div>
 
-            {/* cos phi */}
-            <div className="space-y-1">
-              <label className="text-gray-400 font-medium">Facteur cos φ</label>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">kWh Soir</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.kwhSoir || ''}
+                onChange={(e) => setFormData({ ...formData, kwhSoir: parseFloat(e.target.value) || 0 })}
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">kWh Nuit</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.kwhNuit || ''}
+                onChange={(e) => setFormData({ ...formData, kwhNuit: parseFloat(e.target.value) || 0 })}
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Facteur cos φ</label>
               <input
                 type="number"
                 step="0.001"
-                value={formData.cosPhi}
+                min="0"
+                max="1"
+                value={formData.cosPhi || ''}
                 onChange={(e) => setFormData({ ...formData, cosPhi: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-red-200 font-mono font-bold focus:outline-none focus:border-red-500/50"
+                placeholder="0.00"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* Pénalité Réactive */}
-            <div className="space-y-1">
-              <label className="text-gray-400 font-medium">Pénalité Réactive (TND)</label>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Pénalité Réactive (TND)</label>
               <input
                 type="number"
-                step="0.1"
-                value={formData.reactivePenaltyTnd}
+                min="0"
+                step="0.01"
+                value={formData.reactivePenaltyTnd || ''}
                 onChange={(e) => setFormData({ ...formData, reactivePenaltyTnd: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/10 bg-gray-800 p-2.5 text-white font-mono focus:outline-none focus:border-purple-500/50"
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-[11px] text-slate-400 mb-1">Total Facture TTC (TND)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.totalTtcTnd || ''}
+                onChange={(e) => setFormData({ ...formData, totalTtcTnd: parseFloat(e.target.value) || 0 })}
+                placeholder="0"
+                className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
-          {/* Validation Button */}
           <button
-            onClick={handleSaveToDb}
-            className={`w-full rounded-xl p-3 text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+            onClick={handleSaveToFactory}
+            className={`btn-tactile w-full rounded-xl p-3 text-xs font-bold transition-all flex items-center justify-center gap-2 ${
               isSaved
-                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-md'
+                ? 'bg-emerald-400 text-black'
+                : 'bg-emerald-500 text-black hover:bg-emerald-400'
             }`}
           >
             {isSaved ? (
               <>
                 <CheckCircle2 className="h-4 w-4" />
-                <span>Synchronisé avec Supabase !</span>
+                <span>Facture ajoutée à votre usine</span>
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                <span>{t.ocr.saveToDb}</span>
+                <span>Enregistrer dans mon usine</span>
               </>
             )}
           </button>
@@ -321,4 +398,3 @@ export default function OcrPage() {
     </div>
   );
 }
-

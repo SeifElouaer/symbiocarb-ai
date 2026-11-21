@@ -1,7 +1,7 @@
 'use client';
 
 // ==============================================================================
-// AppShell Client Component: Theme, Auth, i18n Context & Global Workspace Layout
+// AppShell Client Component: Theme, Auth, i18n, Onboarding & Progressive Data
 // ==============================================================================
 
 import React from 'react';
@@ -12,17 +12,16 @@ import { AuditProvider } from '@/lib/audit/audit-context';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { AuditWizardModal } from '@/components/audit/AuditWizardModal';
+import { FactoryOnboardingModal } from '@/components/onboarding/FactoryOnboardingModal';
+import { AddDataModal } from '@/components/audit/AddDataModal';
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
 
   return (
     <div className="flex min-h-screen flex-col bg-background bg-tech-pattern text-foreground transition-colors">
-      {/* Top Global Navigation Bar */}
       <Navbar />
 
-      {/* Workspace Body: Sidebar (when authenticated or browsing modules) + Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {isAuthenticated && <Sidebar />}
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
@@ -30,11 +29,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Google OAuth & Email Auth Modal */}
       <AuthModal />
-
-      {/* Guided Industrial Audit Wizard (5-Step Express) */}
-      <AuditWizardModal />
+      <FactoryOnboardingModal />
+      <AddDataModal />
     </div>
   );
 }

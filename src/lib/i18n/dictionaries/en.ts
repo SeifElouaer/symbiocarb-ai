@@ -10,34 +10,10 @@ export const en = {
     dashboard: 'Industrial Cockpit',
     energy: 'STEG Energy & Grants',
     cbam: 'EU CBAM & ISO 14064',
-    symbiosis: 'Symbiosis & BioClaira',
-    ocr: 'Document AI Invoices',
+    symbiosis: 'BioClaira (Gold Pack)',
+    ocr: 'Import & Scan Invoices',
     copilot: 'DarjaBot Copilot',
-    switchPersona: 'Switch Demo Factory',
-    activePersona: 'Active Facility',
-  },
-
-  personas: {
-    sfax: {
-      name: 'Sfax Olive Oil & Agro-Industrial Facility',
-      desc: 'High seasonal crushing load, STEG peak exposure & olive pomace valorization',
-      location: 'Sfax Thyna Industrial Zone',
-    },
-    tozeur: {
-      name: 'Sahara Dates Conditioning & BioClaira Unit',
-      desc: '24/7 cold storage refrigeration & 600t date pits valorized into Activated Carbon',
-      location: 'Tozeur Industrial Zone',
-    },
-    benarous: {
-      name: 'Ben Arous Precision Machining & Components',
-      desc: 'Reactive penalties cos φ = 0.74 & direct EU CBAM customs reporting on steel/aluminum',
-      location: 'El Mghira Industrial Zone',
-    },
-    custom: {
-      name: 'My Custom Industrial Plant (Real Operational Data)',
-      desc: 'Calculations based on your real uploaded STEG bills and BOM purchases',
-      location: 'Client Industrial Site (Tunisia)',
-    },
+    activeFacility: 'Active Facility',
   },
 
   cockpit: {

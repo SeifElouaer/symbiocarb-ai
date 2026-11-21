@@ -1,31 +1,30 @@
 'use client';
 
 // ==============================================================================
-// Industrial Responsive Sidebar with Dynamic RTL Layout Alignment
-// Enhanced with Taste Skill "Navigation recedes" principle & Obsidian styling
+// Industrial Responsive Sidebar (Clean Navigation, Zero Demo Artifacts)
 // ==============================================================================
 
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/i18n/use-translation';
-import { 
-  LayoutDashboard, 
-  Sparkles,
-  Zap, 
-  Globe2, 
-  Recycle, 
-  FileSearch, 
-  BookOpen, 
-  MapPin, 
-  ShieldCheck,
-  CheckCircle,
-  TrendingDown
+import { useAudit } from '@/lib/audit/audit-context';
+import { useAuth } from '@/lib/auth/auth-context';
+import {
+  LayoutDashboard,
+  Zap,
+  Globe2,
+  Recycle,
+  FileSearch,
+  Database,
+  BookOpen,
 } from 'lucide-react';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { t, locale, persona } = useTranslation();
+  const { t, locale } = useTranslation();
+  const { auditData, openAddDataModal } = useAudit();
+  const { subscriptionPlan } = useAuth();
 
   const navigation = [
     {
@@ -35,15 +34,7 @@ export function Sidebar() {
       active: pathname === '/',
     },
     {
-      name: locale === 'ar-TN' ? 'التشخيص السريع (5 مراحل)' : 'Audit & Diagnostic Express',
-      href: '/audit',
-      icon: Sparkles,
-      active: pathname.startsWith('/audit'),
-      badge: '5 Étapes',
-      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    },
-    {
-      name: t.nav.energy,
+      name: locale === 'ar-TN' ? 'طاقة الستاغ' : 'Énergie STEG',
       href: '/energy',
       icon: Zap,
       active: pathname.startsWith('/energy'),
@@ -51,7 +42,7 @@ export function Sidebar() {
       badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     },
     {
-      name: t.nav.cbam,
+      name: locale === 'ar-TN' ? 'مطابقة الكربون' : 'Conformité CBAM',
       href: '/cbam',
       icon: Globe2,
       active: pathname.startsWith('/cbam'),
@@ -59,39 +50,45 @@ export function Sidebar() {
       badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     },
     {
-      name: t.nav.symbiosis,
-      href: '/symbiosis',
-      icon: Recycle,
-      active: pathname.startsWith('/symbiosis'),
-      badge: 'BioClaira',
-      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    },
-    {
-      name: t.nav.ocr,
+      name: locale === 'ar-TN' ? 'مسح واستيراد الفواتير' : 'Import & Scanner',
       href: '/ocr',
       icon: FileSearch,
       active: pathname.startsWith('/ocr'),
-      badge: 'Gemini 2.5',
-      badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+      badge: 'OCR / CSV',
+      badgeColor: 'bg-white/[0.05] text-slate-300 border-white/[0.1]',
     },
     {
-      name: 'Centre Réglementaire',
+      name: 'BioClaira',
+      href: '/symbiosis',
+      icon: Recycle,
+      active: pathname.startsWith('/symbiosis'),
+      badge: 'Pack Gold',
+      badgeColor:
+        subscriptionPlan === 'gold'
+          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+          : 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+    },
+    {
+      name: locale === 'ar-TN' ? 'بيانات المصنع' : 'Données Usine',
+      href: '/audit',
+      icon: Database,
+      active: pathname.startsWith('/audit'),
+    },
+    {
+      name: locale === 'ar-TN' ? 'النصوص التنظيمية' : 'Réglementation',
       href: '/blog',
       icon: BookOpen,
       active: pathname.startsWith('/blog'),
-      badge: 'ISO / UE',
-      badgeColor: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
     },
   ];
 
-  const personaDetails = t.personas[persona];
+  const hasCompanyName = auditData.companyName.trim().length > 0;
 
   return (
-    <aside className="w-64 shrink-0 border-e border-white/[0.08] bg-[#080C14] flex flex-col justify-between py-5 px-3 transition-colors">
-      {/* Navigation Links */}
+    <aside className="hidden md:flex w-64 shrink-0 border-e border-white/[0.08] bg-[#080C14] flex-col justify-between py-5 px-3 transition-colors">
       <div className="space-y-1">
-        <div className="px-3 pb-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-          <span>{locale === 'ar-TN' ? 'الوحدات الهندسية' : 'Modules Métier'}</span>
+        <div className="px-3 pb-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+          <span>{locale === 'ar-TN' ? 'الوحدات' : 'Navigation'}</span>
           <span className="font-mono text-[9px] text-emerald-500 font-semibold">ISO 50001</span>
         </div>
 
@@ -103,14 +100,14 @@ export function Sidebar() {
               href={item.href}
               className={`group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-all ${
                 item.active
-                  ? 'bg-white/[0.07] text-white border-s-2 border-emerald-400 font-semibold shadow-sm'
+                  ? 'bg-white/[0.07] text-white border-s-2 border-emerald-400 font-semibold'
                   : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <Icon
                   className={`h-4 w-4 transition-colors ${
-                    item.active ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-200'
+                    item.active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-200'
                   }`}
                 />
                 <span className="tracking-tight">{item.name}</span>
@@ -125,47 +122,40 @@ export function Sidebar() {
         })}
       </div>
 
-      {/* Industrial Facility Card & Telemetry Status */}
+      {/* Real Active Facility Card */}
       <div className="space-y-2.5 pt-4">
-        {/* Active Facility Card */}
-        <div className={`rounded-xl border p-3 space-y-2 ${
-          persona === 'custom'
-            ? 'border-emerald-500/30 bg-emerald-950/20'
-            : 'border-white/[0.07] bg-[#0E1526]/70'
-        }`}>
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span className="flex items-center gap-1 font-medium">
-              <ShieldCheck className={`h-3.5 w-3.5 ${persona === 'custom' ? 'text-emerald-400' : 'text-amber-400'}`} />
-              <span className="text-[10px] uppercase font-bold tracking-wider">
-                {persona === 'custom' ? 'Usine Active' : 'Usine Pilote'}
-              </span>
-            </span>
-            <span className={`font-mono text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
-              persona === 'custom'
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-            }`}>
-              {persona === 'custom' ? 'Réel' : 'Démo'}
+        <div className="rounded-xl border border-white/[0.08] bg-[#0D1322] p-3.5 space-y-2">
+          <div className="flex items-center justify-between text-[10px] text-slate-400">
+            <span className="uppercase font-bold tracking-wider">Site Industriel</span>
+            <span className="font-mono text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded bg-white/[0.05] text-slate-300 border border-white/[0.08]">
+              {subscriptionPlan === 'gold' ? 'Gold' : subscriptionPlan === 'pro' ? 'Pro' : 'Starter'}
             </span>
           </div>
 
           <div className="text-xs font-bold text-white line-clamp-1">
-            {personaDetails?.name}
+            {hasCompanyName ? auditData.companyName : 'Usine non configurée'}
           </div>
 
-          <div className="flex items-center gap-1 text-[10px] text-slate-400">
-            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-            <span className="truncate">{personaDetails?.location}</span>
+          <div className="text-[11px] text-slate-400 truncate">
+            {auditData.governorate || auditData.industrialZone
+              ? `${auditData.governorate}${auditData.governorate && auditData.industrialZone ? ' • ' : ''}${auditData.industrialZone}`
+              : 'Profil usine en attente'}
           </div>
+
+          {!hasCompanyName && (
+            <button
+              type="button"
+              onClick={() => openAddDataModal('profile')}
+              className="w-full text-start text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 pt-1"
+            >
+              Configurer le profil →
+            </button>
+          )}
         </div>
 
-        {/* Live Grid Benchmark Pill */}
         <div className="px-3 py-2 rounded-lg bg-black/40 border border-white/[0.05] text-[10px] text-slate-400 flex items-center justify-between font-mono">
-          <span className="flex items-center gap-1 text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            STEG: 0.473
-          </span>
-          <span>ETS: ~85 €/t</span>
+          <span>STEG: 0.473 kg/kWh</span>
+          <span>ETS: 85 €/t</span>
         </div>
       </div>
     </aside>

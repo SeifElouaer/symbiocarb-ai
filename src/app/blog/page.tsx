@@ -133,7 +133,7 @@ const ARTICLES: RegulatoryArticle[] = [
       context: 'Face à la hausse des coûts énergétiques et aux contraintes du réseau national, l\'État tunisien et l\'ANME imposent une gestion rationnelle de l\'énergie aux consommateurs industriels raccordés en Moyenne et Haute Tension.',
       methodology: 'L\'optimisation combine deux leviers mathématiques : 1) La compensation de l\'énergie réactive par condensateurs : Qc = P × (tan φ1 - tan φ2), et 2) L\'effacement des charges flexibles hors de la fenêtre de pointe STEG (18h-21h en hiver, 19h-22h en été).',
       formula: 'Q_c = P_{active} \\times (\\tan(\\arccos(\\cos \\varphi_{actuel})) - \\tan(\\arccos(0.95)))',
-      industrialImpact: 'Une usine de mécanique moyenne à Ben Arous ou une huilerie à Sfax économise entre 25 000 et 85 000 TND par an rien qu\'en neutralisant les pénalités STEG et en décalant 25% de ses charges motrices vers le tarif nuit.',
+      industrialImpact: 'L\'élimination des pénalités réactives STEG et le décalage d\'une fraction des charges flexibles vers les heures creuses permettent de réduire durablement la facture électrique annuelle d\'un site raccordé en Moyenne Tension.',
       checklist: [
         'Vérifier la date d\'échéance du dernier audit énergétique obligatoire déposé à l\'ANME.',
         'Calculer le cos φ moyen de vos 12 dernières factures STEG MT.',
@@ -177,7 +177,7 @@ const ARTICLES: RegulatoryArticle[] = [
     title: 'Modèles BioClaira : Valorisation Thermochimique des Noyaux de Dattes & Grignons d\'Olive',
     category: 'CIRCULAR_ECONOMY',
     categoryLabel: 'Économie Circulaire & Symbiose',
-    categoryColor: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    categoryColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     summary: 'Étude des cinétiques de pyrolyse et d\'activation chimique pour transformer les résidus agro-industriels tunisiens en charbon actif à haute valeur ajoutée et biochar séquestrateur de carbone.',
     readTime: '9 min de lecture',
     publishedDate: '18 Février 2026',
@@ -190,10 +190,10 @@ const ARTICLES: RegulatoryArticle[] = [
       'Chaque tonne de résidus valorisée évite l\'émission de 0.85 tCO₂e de méthane par décomposition anarchique.'
     ],
     fullContent: {
-      context: 'Les agro-industries du Sud et du Centre tunisien (Djérid, Sfax, Sahel) font face à un coût d\'élimination élevé de leurs déchets organiques solides. Les modèles BioClaira permettent de simuler avec rigueur leur transformation en adsorbant industriel ou en bio-combustible.',
-      methodology: 'Le modèle cinétique calcule les rendements massiques (charbon solide : 32%, bio-huile : 45%, gaz de synthèse : 23%), la consommation thermique de séchage préalable et le bilan carbone net évitant les émissions fossiles.',
-      formula: 'Rendement_{Charbon} = Rendement_{Base} \\times e^{-k(T - T_0)} \\times (1 - Humidité)',
-      industrialImpact: 'Une station de conditionnement de dattes à Tozeur valorisant 2 000 tonnes de noyaux dégage un profit net annuel estimé à plus de 210 000 TND tout en réduisant son empreinte carbone de 1 700 tCO₂e.',
+      context: 'De nombreuses unités industrielles et agro-industrielles font face à des coûts élevés d\'élimination de leurs sous-produits solides. Le module optionnel BioClaira (Pack Gold) permet d\'évaluer leur transformation en intrants circulaires ou biocombustibles.',
+      methodology: 'L\'audit séparé évalue les volumes disponibles, l\'humidité résiduelle, les économies de mise en décharge et le potentiel de substitution énergétique Scope 1 ou de valorisation marchande.',
+      formula: 'Rendement_{Valorisation} = Masse_{Seche} \\times Coefficient_{Conversion}',
+      industrialImpact: 'La valorisation circulaire transforme un poste de coût d\'élimination en revenu net additionnel tout en réduisant optionnellement les émissions de méthane évitées.',
       checklist: [
         'Mesurer le taux d\'humidité moyen des résidus à la sortie du procédé de lavage/broyage (< 15% requis).',
         'Réaliser une analyse granulométrique des noyaux concassés.',
