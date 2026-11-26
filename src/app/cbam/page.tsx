@@ -1036,6 +1036,8 @@ export default function CbamPage() {
         reportingYear={cbam.reportingYear}
         defaultComparison={defaultComparison}
         abatementPlan={results.abatementPlan}
+        auditData={auditData}
+        auditResults={results}
       />
     </div>
   );

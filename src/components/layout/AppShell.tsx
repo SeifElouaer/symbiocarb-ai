@@ -37,13 +37,23 @@ function GuestModeBanner() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={loadDemoCase}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/35 bg-blue-500/15 px-2.5 py-1 text-[11px] font-semibold text-blue-200 hover:bg-blue-500/25 transition-colors"
+            onClick={() => loadDemoCase('hedi1')}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/35 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-200 hover:bg-emerald-500/25 transition-colors"
           >
-            <span className="rounded bg-blue-500 px-1 py-0.5 text-[9px] font-mono font-bold text-black">
+            <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-mono font-bold text-black">
               {t.guest.demoTag}
             </span>
-            <span>{t.guest.loadDemo}</span>
+            <span>Hédi 1 — Gagnant (Sous seuil UE)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => loadDemoCase('hedi2')}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/35 bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-200 hover:bg-red-500/25 transition-colors"
+          >
+            <span className="rounded bg-red-500 px-1 py-0.5 text-[9px] font-mono font-bold text-white">
+              {t.guest.demoTag}
+            </span>
+            <span>Hédi 2 — Déficitaire (Hors seuil UE)</span>
           </button>
           {pathname === '/' && (
             <Link

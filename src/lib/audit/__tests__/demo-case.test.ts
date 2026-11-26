@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { DEMO_HEDI_BEN_AROUS } from '../demo-case';
+import {
+  DEMO_HEDI_BEN_AROUS,
+  DEMO_HEDI_1_WINNER,
+  DEMO_HEDI_2_LOSER,
+} from '../demo-case';
 import { calculateCbamReport } from '@/lib/engine/cbam-calculator';
 import { compareDefaultVsActual } from '@/lib/engine/cbam-default-comparator';
 import { buildAbatementPlan } from '@/lib/engine/abatement-plan';
@@ -92,5 +96,102 @@ describe('Task 5: Guest-only Hédi (Ben Arous) demo case key figures', () => {
     expect(cbam.cbamScope.estimatedLiabilityEur).toBeGreaterThan(0);
     expect(comparison.savingForImporterEur).toBeGreaterThan(0);
     expect(plan.curveLevers.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('DEMO_HEDI_1_WINNER stays below EU benchmark with 0 CBAM liability and 0 STEG penalties', () => {
+    const kwhTotal =
+      DEMO_HEDI_1_WINNER.kwhJour +
+      DEMO_HEDI_1_WINNER.kwhPointe +
+      DEMO_HEDI_1_WINNER.kwhSoir +
+      DEMO_HEDI_1_WINNER.kwhNuit;
+
+    const cbam = calculateCbamReport({
+      productName: DEMO_HEDI_1_WINNER.exportProductName,
+      cnCode8: DEMO_HEDI_1_WINNER.exportCnCode,
+      finishedProductTons: DEMO_HEDI_1_WINNER.annualProductionTons,
+      annualExportTons: DEMO_HEDI_1_WINNER.annualExportTons,
+      naturalGasM3PerMonth: DEMO_HEDI_1_WINNER.naturalGasM3,
+      heavyFuelTonsPerMonth: DEMO_HEDI_1_WINNER.heavyFuelTons,
+      dieselLitersPerMonth: DEMO_HEDI_1_WINNER.dieselLiters,
+      annualElectricityKwh: kwhTotal * 12,
+      precursors: DEMO_HEDI_1_WINNER.bomMaterials,
+      reportingYear: 2026,
+      cbamCertificatePriceEur: 85,
+    });
+
+    const comparison = compareDefaultVsActual({
+      cbamResult: cbam,
+      overrideDefaultSee: DEMO_HEDI_1_WINNER.euDefaultSeeOverride,
+    });
+
+    expect(cbam.cbamScope.cbamSeeTco2ePerTon).toBeLessThanOrEqual(cbam.cbamScope.benchmarkTco2ePerTon);
+    expect(cbam.cbamScope.estimatedLiabilityEur).toBe(0);
+    expect(comparison.savingForImporterEur).toBeGreaterThan(0);
+    expect(comparison.isRealDataWorse).toBe(false);
+    expect(DEMO_HEDI_1_WINNER.reactivePenaltyTnd).toBe(0);
+    expect(DEMO_HEDI_1_WINNER.powerOverrunPenaltyTnd).toBe(0);
+  });
+
+  it('DEMO_HEDI_2_LOSER exceeds EU benchmark with deficit, STEG penalties, and actionable compensation plan', () => {
+    const kwhTotal =
+      DEMO_HEDI_2_LOSER.kwhJour +
+      DEMO_HEDI_2_LOSER.kwhPointe +
+      DEMO_HEDI_2_LOSER.kwhSoir +
+      DEMO_HEDI_2_LOSER.kwhNuit;
+
+    const cbam = calculateCbamReport({
+      productName: DEMO_HEDI_2_LOSER.exportProductName,
+      cnCode8: DEMO_HEDI_2_LOSER.exportCnCode,
+      finishedProductTons: DEMO_HEDI_2_LOSER.annualProductionTons,
+      annualExportTons: DEMO_HEDI_2_LOSER.annualExportTons,
+      naturalGasM3PerMonth: DEMO_HEDI_2_LOSER.naturalGasM3,
+      heavyFuelTonsPerMonth: DEMO_HEDI_2_LOSER.heavyFuelTons,
+      dieselLitersPerMonth: DEMO_HEDI_2_LOSER.dieselLiters,
+      annualElectricityKwh: kwhTotal * 12,
+      precursors: DEMO_HEDI_2_LOSER.bomMaterials,
+      reportingYear: 2026,
+      cbamCertificatePriceEur: 85,
+    });
+
+    const comparison = compareDefaultVsActual({
+      cbamResult: cbam,
+      overrideDefaultSee: DEMO_HEDI_2_LOSER.euDefaultSeeOverride,
+    });
+
+    const plan = buildAbatementPlan({
+      sector: DEMO_HEDI_2_LOSER.sector,
+      subscriptionPlan: 'gold',
+      kwhJour: DEMO_HEDI_2_LOSER.kwhJour,
+      kwhPointe: DEMO_HEDI_2_LOSER.kwhPointe,
+      kwhSoir: DEMO_HEDI_2_LOSER.kwhSoir,
+      kwhNuit: DEMO_HEDI_2_LOSER.kwhNuit,
+      cosPhi: DEMO_HEDI_2_LOSER.cosPhi,
+      reactivePenaltyTnd: DEMO_HEDI_2_LOSER.reactivePenaltyTnd,
+      flexibleLoadPct: DEMO_HEDI_2_LOSER.flexibleLoadPct,
+      solarRoofAreaM2: DEMO_HEDI_2_LOSER.solarRoofAreaM2,
+      solarYieldKwhPerKwp: DEMO_HEDI_2_LOSER.solarYieldKwhPerKwp,
+      solarCapexTndPerKwp: DEMO_HEDI_2_LOSER.solarCapexTndPerKwp,
+      exportCnCode: DEMO_HEDI_2_LOSER.exportCnCode,
+      annualProductionTons: DEMO_HEDI_2_LOSER.annualProductionTons,
+      annualExportTons: DEMO_HEDI_2_LOSER.annualExportTons,
+      naturalGasM3: DEMO_HEDI_2_LOSER.naturalGasM3,
+      heavyFuelTons: DEMO_HEDI_2_LOSER.heavyFuelTons,
+      dieselLiters: DEMO_HEDI_2_LOSER.dieselLiters,
+      bomMaterials: DEMO_HEDI_2_LOSER.bomMaterials,
+      precursorSwitches: DEMO_HEDI_2_LOSER.precursorSwitches,
+      wasteType: DEMO_HEDI_2_LOSER.wasteType,
+      wasteMonthlyTons: DEMO_HEDI_2_LOSER.wasteMonthlyTons,
+      moisturePercent: DEMO_HEDI_2_LOSER.moisturePercent,
+      cbamReportingYear: 2026,
+      cbamCertificatePriceEur: 85,
+    });
+
+    expect(cbam.cbamScope.cbamSeeTco2ePerTon).toBeGreaterThan(cbam.cbamScope.benchmarkTco2ePerTon);
+    expect(cbam.cbamScope.estimatedLiabilityEur).toBeGreaterThan(0);
+    expect(comparison.isRealDataWorse).toBe(true);
+    expect(DEMO_HEDI_2_LOSER.reactivePenaltyTnd).toBeGreaterThan(0);
+    expect(DEMO_HEDI_2_LOSER.powerOverrunPenaltyTnd).toBeGreaterThan(0);
+    expect(plan.totalCbamAvoidedTco2e).toBeGreaterThan(1500);
+    expect(plan.cbamAnnualSavedEur).toBeGreaterThan(0);
   });
 });

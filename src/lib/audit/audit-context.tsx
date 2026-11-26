@@ -19,7 +19,11 @@ import {
   EUR_TO_TND_RATE,
   isCbamPrecursorCnCode,
 } from '@/lib/engine/cbam-config';
-import { DEMO_HEDI_BEN_AROUS } from './demo-case';
+import {
+  DEMO_HEDI_1_WINNER,
+  DEMO_HEDI_2_LOSER,
+  DemoCaseVariant,
+} from './demo-case';
 import { useAuth } from '@/lib/auth/auth-context';
 
 export interface MonthlyBillEntry {
@@ -238,7 +242,7 @@ interface AuditContextType {
   addBomMaterial: (material: Omit<BomMaterialEntry, 'id'>) => void;
   updateBomMaterial: (id: string, updates: Partial<BomMaterialEntry>) => void;
   removeBomMaterial: (id: string) => void;
-  loadDemoCase: () => void;
+  loadDemoCase: (variant?: DemoCaseVariant) => void;
   resetAuditData: () => void;
   results: AuditResults;
   isAddDataOpen: boolean;
@@ -473,14 +477,15 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const loadDemoCase = () => {
+  const loadDemoCase = (variant: DemoCaseVariant = 'hedi1') => {
     // Hard safety guard: demo data must NEVER enter an authenticated workspace
     if (isAuthenticated) return;
+    const source = variant === 'hedi2' ? DEMO_HEDI_2_LOSER : DEMO_HEDI_1_WINNER;
     const clone: AuditWizardData = {
-      ...DEMO_HEDI_BEN_AROUS,
-      monthlyBills: DEMO_HEDI_BEN_AROUS.monthlyBills.map((b) => ({ ...b })),
-      bomMaterials: DEMO_HEDI_BEN_AROUS.bomMaterials.map((m) => ({ ...m })),
-      precursorSwitches: { ...DEMO_HEDI_BEN_AROUS.precursorSwitches },
+      ...source,
+      monthlyBills: source.monthlyBills.map((b) => ({ ...b })),
+      bomMaterials: source.bomMaterials.map((m) => ({ ...m })),
+      precursorSwitches: { ...source.precursorSwitches },
     };
     setAuditData(clone);
     persistData(clone);
