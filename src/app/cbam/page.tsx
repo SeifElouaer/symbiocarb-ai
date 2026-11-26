@@ -10,6 +10,8 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n/use-translation';
 import { useAudit } from '@/lib/audit/audit-context';
+import { FIELD_GUIDES } from '@/lib/ux/field-guides';
+import { FieldLabel, FieldHint } from '@/components/ui/FieldLabel';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { AuditReportDialog } from '@/components/cbam/AuditReportDialog';
 import { FALLBACK_EMISSION_FACTORS } from '@/lib/supabase/fallback-data';
@@ -368,9 +370,10 @@ export default function CbamPage() {
       {/* Definitive-Period Controls: Year, Certificate Price & 50t De Minimis */}
       <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
-            {t.cbam.reportingYearLabel}
-          </label>
+          <FieldLabel
+            guide={FIELD_GUIDES.cbamReportingYear}
+            labelOverride={t.cbam.reportingYearLabel}
+          />
           <select
             value={auditData.cbamReportingYear}
             onChange={(e) => updateAuditData({ cbamReportingYear: Number(e.target.value) })}
@@ -389,14 +392,16 @@ export default function CbamPage() {
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
-            {t.cbam.certPriceLabel}
-          </label>
+          <FieldLabel
+            guide={FIELD_GUIDES.cbamCertificatePriceEur}
+            labelOverride={t.cbam.certPriceLabel}
+          />
           <input
             type="number"
             min="0"
             step="1"
             value={auditData.cbamCertificatePriceEur}
+            placeholder={FIELD_GUIDES.cbamCertificatePriceEur.placeholder}
             onChange={(e) =>
               updateAuditData({
                 cbamCertificatePriceEur: Math.max(0, Number(e.target.value) || 0),
@@ -408,15 +413,16 @@ export default function CbamPage() {
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
-            {t.cbam.clientTonnageLabel}
-          </label>
+          <FieldLabel
+            guide={FIELD_GUIDES.euClientAnnualCbamTonnage}
+            labelOverride={t.cbam.clientTonnageLabel}
+          />
           <input
             type="number"
             min="0"
             step="1"
             value={auditData.euClientAnnualCbamTonnage || ''}
-            placeholder="0"
+            placeholder={FIELD_GUIDES.euClientAnnualCbamTonnage.placeholder}
             onChange={(e) =>
               updateAuditData({
                 euClientAnnualCbamTonnage: Math.max(0, Number(e.target.value) || 0),
@@ -610,15 +616,16 @@ export default function CbamPage() {
 
           <div className="flex items-end gap-2">
             <div>
-              <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                {t.cbam.defaultInputLabel}
-              </label>
+              <FieldLabel
+                guide={FIELD_GUIDES.euDefaultSeeOverride}
+                labelOverride={t.cbam.defaultInputLabel}
+              />
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={displayedDefaultSeeInput}
-                placeholder={t.cbam.defaultInputPlaceholder}
+                placeholder={FIELD_GUIDES.euDefaultSeeOverride.placeholder}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value);
                   updateAuditData({
@@ -840,45 +847,61 @@ export default function CbamPage() {
           </div>
         </div>
 
-        <form onSubmit={handleAddBom} className="grid grid-cols-1 sm:grid-cols-6 gap-2.5">
-          <input
-            type="text"
-            value={bomName}
-            onChange={(e) => setBomName(e.target.value)}
-            placeholder="Désignation matière première"
-            className="sm:col-span-2 rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
-          />
-          <input
-            type="text"
-            value={bomCn}
-            onChange={(e) => setBomCn(e.target.value)}
-            placeholder="Code CN (8 chiffres)"
-            className="rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
-          />
-          <input
-            type="number"
-            min="0"
-            step="0.1"
-            value={bomQty}
-            onChange={(e) => setBomQty(e.target.value)}
-            placeholder="Quantité (t/an)"
-            className="rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
-          />
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={bomEf}
-            onChange={(e) => setBomEf(e.target.value)}
-            placeholder="Facteur (tCO2e/t)"
-            className="rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="btn-tactile rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2"
-          >
-            + Ajouter intrant
-          </button>
+        <form onSubmit={handleAddBom} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-start">
+          <div className="sm:col-span-2 lg:col-span-3">
+            <FieldLabel guide={FIELD_GUIDES.bomName} />
+            <input
+              type="text"
+              value={bomName}
+              onChange={(e) => setBomName(e.target.value)}
+              placeholder={FIELD_GUIDES.bomName.placeholder}
+              className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div className="lg:col-span-2">
+            <FieldLabel guide={FIELD_GUIDES.bomCn} />
+            <input
+              type="text"
+              value={bomCn}
+              onChange={(e) => setBomCn(e.target.value)}
+              placeholder={FIELD_GUIDES.bomCn.placeholder}
+              className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+            />
+            <FieldHint>{FIELD_GUIDES.bomCn.shortHint}</FieldHint>
+          </div>
+          <div className="lg:col-span-2">
+            <FieldLabel guide={FIELD_GUIDES.bomQty} />
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={bomQty}
+              onChange={(e) => setBomQty(e.target.value)}
+              placeholder={FIELD_GUIDES.bomQty.placeholder}
+              className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div className="lg:col-span-3">
+            <FieldLabel guide={FIELD_GUIDES.bomEf} />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={bomEf}
+              onChange={(e) => setBomEf(e.target.value)}
+              placeholder={FIELD_GUIDES.bomEf.placeholder}
+              className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+            />
+            <FieldHint>{FIELD_GUIDES.bomEf.shortHint}</FieldHint>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-2 lg:pt-6">
+            <button
+              type="submit"
+              className="w-full btn-tactile rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2"
+            >
+              + Ajouter intrant
+            </button>
+          </div>
         </form>
 
         {auditData.bomMaterials.length === 0 ? (

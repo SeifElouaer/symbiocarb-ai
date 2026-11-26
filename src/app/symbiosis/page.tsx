@@ -9,6 +9,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAudit, WasteStreamType } from '@/lib/audit/audit-context';
+import { FIELD_GUIDES } from '@/lib/ux/field-guides';
+import { FieldLabel, FieldHint, FieldWarning } from '@/components/ui/FieldLabel';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { simulateBioClairaValorization } from '@/lib/engine/bioclaira-simulator';
 import { ArrowRight, Check } from 'lucide-react';
@@ -201,7 +203,7 @@ export default function BioClairaPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs text-slate-300 font-medium">Nature du rejet industriel</label>
+            <FieldLabel guide={FIELD_GUIDES.wasteType} />
             <select
               value={auditData.wasteType}
               onChange={(e) => updateAuditData({ wasteType: e.target.value as WasteStreamType })}
@@ -213,11 +215,12 @@ export default function BioClairaPage() {
                 </option>
               ))}
             </select>
+            <FieldHint>{FIELD_GUIDES.wasteType.shortHint}</FieldHint>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Volume mensuel (tonnes/mois)</label>
+              <FieldLabel guide={FIELD_GUIDES.wasteMonthlyTons} />
               <input
                 type="number"
                 min="0"
@@ -226,13 +229,14 @@ export default function BioClairaPage() {
                 onChange={(e) =>
                   updateAuditData({ wasteMonthlyTons: Math.max(0, Number(e.target.value) || 0) })
                 }
-                placeholder="0"
+                placeholder={FIELD_GUIDES.wasteMonthlyTons.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              <FieldHint>{FIELD_GUIDES.wasteMonthlyTons.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Humidité (%)</label>
+              <FieldLabel guide={FIELD_GUIDES.moisturePercent} />
               <input
                 type="number"
                 min="0"
@@ -241,16 +245,21 @@ export default function BioClairaPage() {
                 onChange={(e) =>
                   updateAuditData({ moisturePercent: Math.min(95, Math.max(0, Number(e.target.value) || 0)) })
                 }
-                placeholder="0"
+                placeholder={FIELD_GUIDES.moisturePercent.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              {auditData.moisturePercent > 20 ? (
+                <FieldWarning tone="blue">
+                  Humidité &gt; 20 % : un pré-séchage thermique est activé automatiquement dans le calcul.
+                </FieldWarning>
+              ) : (
+                <FieldHint>{FIELD_GUIDES.moisturePercent.shortHint}</FieldHint>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">
-              Coût actuel d&apos;évacuation / décharge (TND / tonne)
-            </label>
+            <FieldLabel guide={FIELD_GUIDES.disposalCostTndPerTon} />
             <input
               type="number"
               min="0"
@@ -258,19 +267,20 @@ export default function BioClairaPage() {
               onChange={(e) =>
                 updateAuditData({ disposalCostTndPerTon: Math.max(0, Number(e.target.value) || 0) })
               }
-              placeholder="0"
+              placeholder={FIELD_GUIDES.disposalCostTndPerTon.placeholder}
               className="w-full rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
             />
+            <FieldHint>{FIELD_GUIDES.disposalCostTndPerTon.shortHint}</FieldHint>
           </div>
 
           {(auditData.wasteType === 'date_pits' ||
             auditData.wasteType === 'olive_pomace' ||
             auditData.wasteType === 'olive_mill_wastewater') && (
             <div className="space-y-3 pt-2 border-t border-white/[0.08]">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Température de conversion</span>
-                <span className="font-mono text-emerald-400 font-bold">{pyrolysisTemp} °C</span>
-              </div>
+              <FieldLabel
+                guide={FIELD_GUIDES.pyrolysisTemp}
+                labelOverride={`Température de conversion : ${pyrolysisTemp} °C`}
+              />
               <input
                 type="range"
                 min="450"
@@ -280,30 +290,41 @@ export default function BioClairaPage() {
                 onChange={(e) => setPyrolysisTemp(parseInt(e.target.value, 10))}
                 className="w-full accent-emerald-500 bg-black/40 rounded-lg cursor-pointer h-2"
               />
+              {pyrolysisTemp > 780 ? (
+                <FieldWarning tone="amber">
+                  Température &gt; 780 °C : risque de frittage réduisant la surface microporeuse BET.
+                </FieldWarning>
+              ) : (
+                <FieldHint>{FIELD_GUIDES.pyrolysisTemp.shortHint}</FieldHint>
+              )}
 
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActivationMethod('h3po4')}
-                  className={`rounded-lg border p-2 text-[11px] font-semibold transition-all ${
-                    activationMethod === 'h3po4'
-                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                      : 'border-white/[0.08] bg-black/30 text-slate-400'
-                  }`}
-                >
-                  Voie Chimique
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivationMethod('steam')}
-                  className={`rounded-lg border p-2 text-[11px] font-semibold transition-all ${
-                    activationMethod === 'steam'
-                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                      : 'border-white/[0.08] bg-black/30 text-slate-400'
-                  }`}
-                >
-                  Voie Vapeur
-                </button>
+              <div>
+                <FieldLabel guide={FIELD_GUIDES.activationMethod} />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActivationMethod('h3po4')}
+                    className={`rounded-lg border p-2 text-[11px] font-semibold transition-all ${
+                      activationMethod === 'h3po4'
+                        ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                        : 'border-white/[0.08] bg-black/30 text-slate-400'
+                    }`}
+                  >
+                    Voie Chimique (H₃PO₄)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActivationMethod('steam')}
+                    className={`rounded-lg border p-2 text-[11px] font-semibold transition-all ${
+                      activationMethod === 'steam'
+                        ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                        : 'border-white/[0.08] bg-black/30 text-slate-400'
+                    }`}
+                  >
+                    Voie Vapeur
+                  </button>
+                </div>
+                <FieldHint>{FIELD_GUIDES.activationMethod.shortHint}</FieldHint>
               </div>
             </div>
           )}

@@ -10,6 +10,8 @@ import { useTranslation } from '@/lib/i18n/use-translation';
 import { useAudit } from '@/lib/audit/audit-context';
 import { solveCosPhiCompensation } from '@/lib/engine/cos-phi-solver';
 import { solveLoadShifting } from '@/lib/engine/load-shifting-lp';
+import { FIELD_GUIDES } from '@/lib/ux/field-guides';
+import { FieldLabel, FieldHint } from '@/components/ui/FieldLabel';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { formatSignedAmount } from '@/lib/format/signed-amount';
 import { Plus } from 'lucide-react';
@@ -138,11 +140,12 @@ export default function EnergyPage() {
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-300 font-medium">
-                {t.energy.cosPhiTarget} :{' '}
-                <span className="font-mono text-emerald-400 font-bold">{targetCosPhi}</span>
-              </span>
+            <FieldLabel
+              guide={FIELD_GUIDES.targetCosPhi}
+              labelOverride={`${t.energy.cosPhiTarget} : ${targetCosPhi}`}
+              showShortHint
+            />
+            <div className="flex justify-end text-[11px]">
               <span className="text-slate-400 font-mono">Qc = P × (tan φ₁ - tan φ₂)</span>
             </div>
             <input
@@ -225,10 +228,11 @@ export default function EnergyPage() {
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-300">{t.energy.shiftPercent}</span>
-              <span className="font-mono text-emerald-400 font-bold">{flexibleLoadPct}%</span>
-            </div>
+            <FieldLabel
+              guide={FIELD_GUIDES.flexibleLoadPct}
+              labelOverride={`${t.energy.shiftPercent} : ${flexibleLoadPct}%`}
+              showShortHint
+            />
             <input
               type="range"
               min="0"

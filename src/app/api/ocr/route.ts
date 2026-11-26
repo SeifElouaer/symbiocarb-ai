@@ -1,10 +1,10 @@
 // ==============================================================================
 // Multimodal Document AI Route Handler (/api/ocr)
-// Uses Gemini 2.5 Flash Vision to parse STEG MT/HT Invoices and extract exact metrics
+// Uses Gemini Flash Vision to parse STEG MT/HT Invoices and extract exact metrics
 // ==============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { parseInvoiceWithGeminiVision } from '@/lib/ai/gemini';
+import { normalizeTariffRegime, parseInvoiceWithGeminiVision } from '@/lib/ai/gemini';
 import { calculateStegMtBill } from '@/lib/engine/steg-tariffs';
 import { solveCosPhiCompensation } from '@/lib/engine/cos-phi-solver';
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       kvarhTotal: extracted.kvarhTotal || 0,
       pSouscriteKva: extracted.pSouscriteKva || 400,
       pMaxAppeleeKva: extracted.pMaxAppeleeKva || 400,
-      tariffRegime: extracted.tariffRegime || 'MT_POSTES_HORAIRES',
+      tariffRegime: normalizeTariffRegime(extracted.tariffRegime),
       statedTotalKwh: sumKwh,
     });
 
@@ -90,7 +90,31 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('OCR Route Error:', error);
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (message.includes('GEMINI_API_KEY')) {
+      return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    }
+
+    if (/503|429|unavailable|high demand|overloaded|resource exhausted/i.test(message)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Le service d'analyse IA est temporairement surchargé. Veuillez réessayer dans quelques secondes ou saisir les valeurs manuellement.",
+        },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "Impossible d'analyser automatiquement cette facture. Vérifiez la lisibilité du fichier (PDF ou photo) ou complétez les champs manuellement.",
+      },
+      { status: 500 }
+    );
   }
 }
 

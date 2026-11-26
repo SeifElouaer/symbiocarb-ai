@@ -8,6 +8,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAudit } from '@/lib/audit/audit-context';
+import { FIELD_GUIDES } from '@/lib/ux/field-guides';
+import { FieldLabel, FieldHint, FieldWarning } from '@/components/ui/FieldLabel';
 import { Sector, StegTariffType } from '@/types';
 import { X, Upload, Check, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
@@ -70,7 +72,8 @@ export function AddDataModal() {
   };
 
   const handleOcrFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
     setIsScanning(true);
     setScanMsg(null);
@@ -103,6 +106,13 @@ export function AddDataModal() {
         if (ext.districtSteg) setDistrictSteg(String(ext.districtSteg));
         if (ext.billingMonth) setMonth(Number(ext.billingMonth));
         if (ext.billingYear) setYear(Number(ext.billingYear));
+        if (
+          ext.tariffRegime === 'MT_POSTES_HORAIRES' ||
+          ext.tariffRegime === 'MT_UNIFORME' ||
+          ext.tariffRegime === 'HT'
+        ) {
+          setTariffRegime(ext.tariffRegime);
+        }
         if (ext.pSouscriteKva != null) setPSouscriteKva(String(ext.pSouscriteKva));
         if (ext.pMaxAppeleeKva != null) setPMaxAppeleeKva(String(ext.pMaxAppeleeKva));
         if (ext.kwhJour != null) setKwhJour(String(ext.kwhJour));
@@ -119,6 +129,7 @@ export function AddDataModal() {
     } catch {
       setScanErr('Erreur lors de la lecture du fichier.');
     } finally {
+      input.value = '';
       setIsScanning(false);
     }
   };
@@ -266,9 +277,9 @@ export function AddDataModal() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Mois</label>
+                  <FieldLabel guide={FIELD_GUIDES.month} />
                   <input
                     type="number"
                     min="1"
@@ -276,31 +287,33 @@ export function AddDataModal() {
                     required
                     value={month}
                     onChange={(e) => setMonth(Number(e.target.value) || 1)}
+                    placeholder={FIELD_GUIDES.month.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Année</label>
+                  <FieldLabel guide={FIELD_GUIDES.year} />
                   <input
                     type="number"
                     required
                     value={year}
                     onChange={(e) => setYear(Number(e.target.value) || 2026)}
+                    placeholder={FIELD_GUIDES.year.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">District STEG</label>
+                  <FieldLabel guide={FIELD_GUIDES.districtSteg} />
                   <input
                     type="text"
                     value={districtSteg}
                     onChange={(e) => setDistrictSteg(e.target.value)}
-                    placeholder="District"
+                    placeholder={FIELD_GUIDES.districtSteg.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Régime tarifaire</label>
+                  <FieldLabel guide={FIELD_GUIDES.tariffRegime} />
                   <select
                     value={tariffRegime}
                     onChange={(e) => setTariffRegime(e.target.value as StegTariffType)}
@@ -313,89 +326,100 @@ export function AddDataModal() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">kWh Jour</label>
+                  <FieldLabel guide={FIELD_GUIDES.kwhJour} />
                   <input
                     type="number"
                     min="0"
                     value={kwhJour}
                     onChange={(e) => setKwhJour(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.kwhJour.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.kwhJour.shortHint}</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-amber-300 mb-1">kWh Pointe</label>
+                  <FieldLabel guide={FIELD_GUIDES.kwhPointe} tone="amber" />
                   <input
                     type="number"
                     min="0"
                     value={kwhPointe}
                     onChange={(e) => setKwhPointe(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                    placeholder={FIELD_GUIDES.kwhPointe.placeholder}
+                    className="w-full rounded-lg bg-black/40 border border-amber-500/25 px-3 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.kwhPointe.shortHint}</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">kWh Soir</label>
+                  <FieldLabel guide={FIELD_GUIDES.kwhSoir} />
                   <input
                     type="number"
                     min="0"
                     value={kwhSoir}
                     onChange={(e) => setKwhSoir(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.kwhSoir.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.kwhSoir.shortHint}</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">kWh Nuit</label>
+                  <FieldLabel guide={FIELD_GUIDES.kwhNuit} />
                   <input
                     type="number"
                     min="0"
                     value={kwhNuit}
                     onChange={(e) => setKwhNuit(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.kwhNuit.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.kwhNuit.shortHint}</FieldHint>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">P. Souscrite (kVA)</label>
+                  <FieldLabel guide={FIELD_GUIDES.pSouscriteKva} />
                   <input
                     type="number"
                     min="0"
                     value={pSouscriteKva}
                     onChange={(e) => setPSouscriteKva(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.pSouscriteKva.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">P. Max Appelée (kVA)</label>
+                  <FieldLabel guide={FIELD_GUIDES.pMaxAppeleeKva} />
                   <input
                     type="number"
                     min="0"
                     value={pMaxAppeleeKva}
                     onChange={(e) => setPMaxAppeleeKva(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.pMaxAppeleeKva.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  {num(pSouscriteKva) > 0 && num(pMaxAppeleeKva) > num(pSouscriteKva) && (
+                    <FieldWarning>
+                      Dépassement de +{(num(pMaxAppeleeKva) - num(pSouscriteKva)).toFixed(0)} kVA
+                      détecté (pénalité STEG 25 TND/kVA/mois).
+                    </FieldWarning>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">kVARh Total</label>
+                  <FieldLabel guide={FIELD_GUIDES.kvarhTotal} />
                   <input
                     type="number"
                     min="0"
                     value={kvarhTotal}
                     onChange={(e) => setKvarhTotal(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.kvarhTotal.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.kvarhTotal.shortHint}</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Facteur cos φ</label>
+                  <FieldLabel guide={FIELD_GUIDES.cosPhi} />
                   <input
                     type="number"
                     step="0.001"
@@ -403,31 +427,37 @@ export function AddDataModal() {
                     max="1"
                     value={cosPhi}
                     onChange={(e) => setCosPhi(e.target.value)}
-                    placeholder="0.00"
+                    placeholder={FIELD_GUIDES.cosPhi.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.cosPhi.shortHint}</FieldHint>
+                  {num(cosPhi) > 0 && (num(cosPhi) < 0.5 || num(cosPhi) > 1) && (
+                    <FieldWarning>
+                      Un cos φ industriel se situe entre 0,50 et 1,00 (ex. 0,78).
+                    </FieldWarning>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Pénalité Réactive (TND)</label>
+                  <FieldLabel guide={FIELD_GUIDES.reactivePenaltyTnd} />
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={reactivePenaltyTnd}
                     onChange={(e) => setReactivePenaltyTnd(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.reactivePenaltyTnd.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Montant TTC (TND)</label>
+                  <FieldLabel guide={FIELD_GUIDES.totalTtcTnd} />
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={totalTtcTnd}
                     onChange={(e) => setTotalTtcTnd(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.totalTtcTnd.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
@@ -439,54 +469,56 @@ export function AddDataModal() {
             <div className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Code douanier CN (8 chiffres)
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.exportCnCode} />
                   <input
                     type="text"
                     value={auditData.exportCnCode}
                     onChange={(e) => updateAuditData({ exportCnCode: e.target.value })}
-                    placeholder="Ex: 7209 16 90"
+                    placeholder={FIELD_GUIDES.exportCnCode.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.exportCnCode.shortHint}</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Produit exporté
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.exportProductName} />
                   <input
                     type="text"
                     value={auditData.exportProductName}
                     onChange={(e) => updateAuditData({ exportProductName: e.target.value })}
-                    placeholder="Désignation commerciale"
+                    placeholder={FIELD_GUIDES.exportProductName.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.exportProductName.shortHint}</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Production annuelle totale (tonnes/an)
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.annualProductionTons} />
                   <input
                     type="number"
                     min="0"
                     value={auditData.annualProductionTons || ''}
                     onChange={(e) => updateAuditData({ annualProductionTons: Math.max(0, Number(e.target.value) || 0) })}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.annualProductionTons.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.annualProductionTons.shortHint}</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Volume exporté vers l&apos;UE (tonnes/an)
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.annualExportTons} />
                   <input
                     type="number"
                     min="0"
                     value={auditData.annualExportTons || ''}
                     onChange={(e) => updateAuditData({ annualExportTons: Math.max(0, Number(e.target.value) || 0) })}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.annualExportTons.placeholder}
                     className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.annualExportTons.shortHint}</FieldHint>
+                  {auditData.annualProductionTons > 0 &&
+                    auditData.annualExportTons > auditData.annualProductionTons && (
+                      <FieldWarning>
+                        Le volume exporté vers l&apos;UE dépasse la production annuelle totale.
+                      </FieldWarning>
+                    )}
                 </div>
               </div>
 
@@ -496,38 +528,41 @@ export function AddDataModal() {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Gaz Naturel (Nm³/mois)</label>
+                    <FieldLabel guide={FIELD_GUIDES.naturalGasM3} />
                     <input
                       type="number"
                       min="0"
                       value={auditData.naturalGasM3 || ''}
                       onChange={(e) => updateAuditData({ naturalGasM3: Math.max(0, Number(e.target.value) || 0) })}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.naturalGasM3.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
+                    <FieldHint>{FIELD_GUIDES.naturalGasM3.shortHint}</FieldHint>
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Fuel Lourd (tonnes/mois)</label>
+                    <FieldLabel guide={FIELD_GUIDES.heavyFuelTons} />
                     <input
                       type="number"
                       min="0"
                       step="0.1"
                       value={auditData.heavyFuelTons || ''}
                       onChange={(e) => updateAuditData({ heavyFuelTons: Math.max(0, Number(e.target.value) || 0) })}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.heavyFuelTons.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
+                    <FieldHint>{FIELD_GUIDES.heavyFuelTons.shortHint}</FieldHint>
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Gasoil / Diesel (L/mois)</label>
+                    <FieldLabel guide={FIELD_GUIDES.dieselLiters} />
                     <input
                       type="number"
                       min="0"
                       value={auditData.dieselLiters || ''}
                       onChange={(e) => updateAuditData({ dieselLiters: Math.max(0, Number(e.target.value) || 0) })}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.dieselLiters.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
+                    <FieldHint>{FIELD_GUIDES.dieselLiters.shortHint}</FieldHint>
                   </div>
                 </div>
               </div>
@@ -537,47 +572,61 @@ export function AddDataModal() {
                 <h3 className="text-xs font-bold text-slate-200">
                   Matières premières entrantes (Scope 3 BOM)
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-                  <input
-                    type="text"
-                    value={bomName}
-                    onChange={(e) => setBomName(e.target.value)}
-                    placeholder="Matière première"
-                    className="sm:col-span-2 rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    value={bomCn}
-                    onChange={(e) => setBomCn(e.target.value)}
-                    placeholder="Code CN"
-                    className="rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    value={bomQty}
-                    onChange={(e) => setBomQty(e.target.value)}
-                    placeholder="Tonnes/an"
-                    className="rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
-                  />
-                  <div className="flex gap-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <FieldLabel guide={FIELD_GUIDES.bomName} />
+                    <input
+                      type="text"
+                      value={bomName}
+                      onChange={(e) => setBomName(e.target.value)}
+                      placeholder={FIELD_GUIDES.bomName.placeholder}
+                      className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel guide={FIELD_GUIDES.bomCn} />
+                    <input
+                      type="text"
+                      value={bomCn}
+                      onChange={(e) => setBomCn(e.target.value)}
+                      placeholder={FIELD_GUIDES.bomCn.placeholder}
+                      className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel guide={FIELD_GUIDES.bomQty} />
                     <input
                       type="number"
                       min="0"
-                      step="0.01"
-                      value={bomEf}
-                      onChange={(e) => setBomEf(e.target.value)}
-                      placeholder="FE tCO2/t"
-                      className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-2.5 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                      value={bomQty}
+                      onChange={(e) => setBomQty(e.target.value)}
+                      placeholder={FIELD_GUIDES.bomQty.placeholder}
+                      className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
-                    <button
-                      type="button"
-                      onClick={handleAddBom}
-                      className="px-2.5 rounded-lg bg-emerald-500 text-black font-bold hover:bg-emerald-400 shrink-0"
-                      title="Ajouter"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
+                  </div>
+                  <div>
+                    <FieldLabel guide={FIELD_GUIDES.bomEf} />
+                    <div className="flex gap-1.5">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={bomEf}
+                        onChange={(e) => setBomEf(e.target.value)}
+                        placeholder={FIELD_GUIDES.bomEf.placeholder}
+                        className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-2.5 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddBom}
+                        className="px-3 rounded-lg bg-emerald-500 text-black font-bold hover:bg-emerald-400 shrink-0 inline-flex items-center gap-1 text-xs"
+                        title="Ajouter cet intrant"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Ajouter</span>
+                      </button>
+                    </div>
+                    <FieldHint>{FIELD_GUIDES.bomEf.shortHint}</FieldHint>
                   </div>
                 </div>
 
@@ -611,57 +660,47 @@ export function AddDataModal() {
           {tab === 'profile' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                  Raison sociale
-                </label>
+                <FieldLabel guide={FIELD_GUIDES.companyName} />
                 <input
                   type="text"
                   value={auditData.companyName}
                   onChange={(e) => updateAuditData({ companyName: e.target.value })}
-                  placeholder="Nom de l'entreprise"
+                  placeholder={FIELD_GUIDES.companyName.placeholder}
                   className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                  Matricule Fiscal (MF)
-                </label>
+                <FieldLabel guide={FIELD_GUIDES.fiscalId} />
                 <input
                   type="text"
                   value={auditData.fiscalId}
                   onChange={(e) => updateAuditData({ fiscalId: e.target.value })}
-                  placeholder="0000000/A/M/000"
+                  placeholder={FIELD_GUIDES.fiscalId.placeholder}
                   className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                  Gouvernorat
-                </label>
+                <FieldLabel guide={FIELD_GUIDES.governorate} />
                 <input
                   type="text"
                   value={auditData.governorate}
                   onChange={(e) => updateAuditData({ governorate: e.target.value })}
-                  placeholder="Gouvernorat"
+                  placeholder={FIELD_GUIDES.governorate.placeholder}
                   className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                  Zone industrielle
-                </label>
+                <FieldLabel guide={FIELD_GUIDES.industrialZone} />
                 <input
                   type="text"
                   value={auditData.industrialZone}
                   onChange={(e) => updateAuditData({ industrialZone: e.target.value })}
-                  placeholder="Zone industrielle"
+                  placeholder={FIELD_GUIDES.industrialZone.placeholder}
                   className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                  Secteur industriel
-                </label>
+                <FieldLabel guide={FIELD_GUIDES.sector} />
                 <select
                   value={auditData.sector}
                   onChange={(e) => updateAuditData({ sector: e.target.value as Sector })}
@@ -674,16 +713,15 @@ export function AddDataModal() {
                   <option value="textile">Textile &amp; Confection</option>
                   <option value="chemicals">Chimie &amp; Matériaux</option>
                 </select>
+                <FieldHint>{FIELD_GUIDES.sector.shortHint}</FieldHint>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                  E-mail de contact
-                </label>
+                <FieldLabel guide={FIELD_GUIDES.contactEmail} />
                 <input
                   type="email"
                   value={auditData.contactEmail}
                   onChange={(e) => updateAuditData({ contactEmail: e.target.value })}
-                  placeholder="contact@entreprise.tn"
+                  placeholder={FIELD_GUIDES.contactEmail.placeholder}
                   className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>

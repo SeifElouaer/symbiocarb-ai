@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { useAudit } from '@/lib/audit/audit-context';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useTranslation } from '@/lib/i18n/use-translation';
+import { FIELD_GUIDES } from '@/lib/ux/field-guides';
+import { FieldLabel, FieldHint } from '@/components/ui/FieldLabel';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { formatSignedAmount } from '@/lib/format/signed-amount';
 import { AbatementLeverId, AbatementLeverResult } from '@/lib/engine/abatement-plan';
@@ -349,25 +351,28 @@ export default function ActionPlanPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">
-                {t.plan.roofAreaLabel}
-              </label>
+              <FieldLabel
+                guide={FIELD_GUIDES.solarRoofAreaM2}
+                labelOverride={t.plan.roofAreaLabel}
+              />
               <input
                 type="number"
                 min="0"
                 value={auditData.solarRoofAreaM2 || ''}
-                placeholder={t.plan.roofAreaPlaceholder}
+                placeholder={FIELD_GUIDES.solarRoofAreaM2.placeholder}
                 onChange={(e) =>
                   updateAuditData({ solarRoofAreaM2: Math.max(0, Number(e.target.value) || 0) })
                 }
                 className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 font-mono text-white focus:border-emerald-500 focus:outline-none"
               />
+              <FieldHint>{FIELD_GUIDES.solarRoofAreaM2.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">
-                {t.plan.pvYieldLabel}
-              </label>
+              <FieldLabel
+                guide={FIELD_GUIDES.solarYieldKwhPerKwp}
+                labelOverride={t.plan.pvYieldLabel}
+              />
               <input
                 type="number"
                 min="100"
@@ -381,12 +386,14 @@ export default function ActionPlanPage() {
                 }
                 className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 font-mono text-white focus:border-emerald-500 focus:outline-none"
               />
+              <FieldHint>{FIELD_GUIDES.solarYieldKwhPerKwp.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">
-                {t.plan.pvCapexLabel}
-              </label>
+              <FieldLabel
+                guide={FIELD_GUIDES.solarCapexTndPerKwp}
+                labelOverride={t.plan.pvCapexLabel}
+              />
               <input
                 type="number"
                 min="0"
@@ -400,12 +407,14 @@ export default function ActionPlanPage() {
                 }
                 className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3 py-2 font-mono text-white focus:border-emerald-500 focus:outline-none"
               />
+              <FieldHint>{FIELD_GUIDES.solarCapexTndPerKwp.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">
-                {t.plan.flexShareLabel} ({auditData.flexibleLoadPct}%)
-              </label>
+              <FieldLabel
+                guide={FIELD_GUIDES.flexibleLoadPct}
+                labelOverride={`${t.plan.flexShareLabel} (${auditData.flexibleLoadPct}%)`}
+              />
               <input
                 type="range"
                 min="0"
@@ -415,6 +424,7 @@ export default function ActionPlanPage() {
                 onChange={(e) => updateAuditData({ flexibleLoadPct: Number(e.target.value) })}
                 className="w-full accent-emerald-500 mt-2 cursor-pointer"
               />
+              <FieldHint>{FIELD_GUIDES.flexibleLoadPct.shortHint}</FieldHint>
             </div>
           </div>
         </div>
@@ -443,17 +453,18 @@ export default function ActionPlanPage() {
                         {m.quantityTons} t · {m.efTco2ePerTon} tCO₂e/t
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">
-                          {t.plan.altEfLabel}
-                        </label>
+                        <FieldLabel
+                          guide={FIELD_GUIDES.alternativeEfTco2ePerTon}
+                          labelOverride={t.plan.altEfLabel}
+                        />
                         <input
                           type="number"
                           min="0"
                           step="0.05"
                           value={sw ? sw.alternativeEfTco2ePerTon : ''}
-                          placeholder="0.75"
+                          placeholder={FIELD_GUIDES.alternativeEfTco2ePerTon.placeholder}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value);
                             const next = { ...auditData.precursorSwitches };
@@ -469,16 +480,18 @@ export default function ActionPlanPage() {
                           }}
                           className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-2.5 py-1.5 font-mono text-white focus:border-blue-500 focus:outline-none"
                         />
+                        <FieldHint>{FIELD_GUIDES.alternativeEfTco2ePerTon.shortHint}</FieldHint>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">
-                          {t.plan.premiumLabel}
-                        </label>
+                        <FieldLabel
+                          guide={FIELD_GUIDES.pricePremiumTndPerTon}
+                          labelOverride={t.plan.premiumLabel}
+                        />
                         <input
                           type="number"
                           step="5"
                           value={sw ? sw.pricePremiumTndPerTon : ''}
-                          placeholder="Ex: 80"
+                          placeholder={FIELD_GUIDES.pricePremiumTndPerTon.placeholder}
                           onChange={(e) => {
                             const prem = parseFloat(e.target.value);
                             const next = { ...auditData.precursorSwitches };
@@ -491,6 +504,7 @@ export default function ActionPlanPage() {
                           }}
                           className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-2.5 py-1.5 font-mono text-white focus:border-blue-500 focus:outline-none"
                         />
+                        <FieldHint>{FIELD_GUIDES.pricePremiumTndPerTon.shortHint}</FieldHint>
                       </div>
                     </div>
                   </div>

@@ -1,17 +1,22 @@
 // ==============================================================================
-// Multilingual Vector Embeddings (Google Gemini text-embedding-004)
+// Multilingual Vector Embeddings (Google Gemini gemini-embedding-001, 768-dim)
 // Generates 768-dimensional normalized vectors for FR, EN, AR semantic matching
 // ==============================================================================
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const apiKey = process.env.GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(apiKey);
-
 export async function generateTextEmbedding(text: string): Promise<number[]> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'text-embedding-004' });
-    const result = await model.embedContent(text);
+    const apiKey = process.env.GEMINI_API_KEY || '';
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY not configured');
+    }
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
+    const result = await model.embedContent({
+      content: { role: 'user', parts: [{ text }] },
+      outputDimensionality: 768,
+    } as any);
     return result.embedding.values;
   } catch (error) {
     console.error('Error generating embedding, using deterministic pseudo-vector:', error);

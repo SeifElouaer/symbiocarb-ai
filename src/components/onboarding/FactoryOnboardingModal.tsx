@@ -9,6 +9,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAudit, MonthlyBillEntry } from '@/lib/audit/audit-context';
+import { FIELD_GUIDES } from '@/lib/ux/field-guides';
+import { FieldLabel, FieldHint, FieldWarning } from '@/components/ui/FieldLabel';
 import { Sector, StegTariffType } from '@/types';
 import { Upload, ArrowRight, ArrowLeft, AlertCircle, Check } from 'lucide-react';
 
@@ -123,7 +125,8 @@ export function FactoryOnboardingModal() {
   };
 
   const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
 
     setDocError(null);
@@ -142,7 +145,6 @@ export function FactoryOnboardingModal() {
           setImportedCsvCount(parsedBills.length);
           setDocStatus(`${parsedBills.length} période(s) mensuelle(s) importée(s) depuis le fichier CSV.`);
         }
-        setIsProcessingDoc(false);
         return;
       }
 
@@ -177,6 +179,13 @@ export function FactoryOnboardingModal() {
         const ext = data.extracted;
         if (ext.billingMonth) setMonth(Number(ext.billingMonth));
         if (ext.billingYear) setYear(Number(ext.billingYear));
+        if (
+          ext.tariffRegime === 'MT_POSTES_HORAIRES' ||
+          ext.tariffRegime === 'MT_UNIFORME' ||
+          ext.tariffRegime === 'HT'
+        ) {
+          setTariffRegime(ext.tariffRegime);
+        }
         if (ext.pSouscriteKva != null) setPSouscriteKva(String(ext.pSouscriteKva));
         if (ext.pMaxAppeleeKva != null) setPMaxAppeleeKva(String(ext.pMaxAppeleeKva));
         if (ext.kwhJour != null) setKwhJour(String(ext.kwhJour));
@@ -192,6 +201,7 @@ export function FactoryOnboardingModal() {
     } catch {
       setDocError("Erreur lors du traitement du fichier. Saisissez les données manuellement ou passez l'étape.");
     } finally {
+      input.value = '';
       setIsProcessingDoc(false);
     }
   };
@@ -288,61 +298,51 @@ export function FactoryOnboardingModal() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Raison sociale de l&apos;entreprise
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.companyName} />
                   <input
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="Nom officiel de l'usine"
+                    placeholder={FIELD_GUIDES.companyName.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Matricule Fiscal (MF)
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.fiscalId} />
                   <input
                     type="text"
                     value={fiscalId}
                     onChange={(e) => setFiscalId(e.target.value)}
-                    placeholder="0000000/A/M/000"
+                    placeholder={FIELD_GUIDES.fiscalId.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Gouvernorat
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.governorate} />
                   <input
                     type="text"
                     value={governorate}
                     onChange={(e) => setGovernorate(e.target.value)}
-                    placeholder="Gouvernorat d'implantation"
+                    placeholder={FIELD_GUIDES.governorate.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Zone industrielle / Adresse
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.industrialZone} />
                   <input
                     type="text"
                     value={industrialZone}
                     onChange={(e) => setIndustrialZone(e.target.value)}
-                    placeholder="Zone industrielle"
+                    placeholder={FIELD_GUIDES.industrialZone.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Secteur d&apos;activité
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.sector} />
                   <select
                     value={sector}
                     onChange={(e) => setSector(e.target.value as Sector)}
@@ -355,60 +355,62 @@ export function FactoryOnboardingModal() {
                     <option value="textile">Textile &amp; Confection</option>
                     <option value="chemicals">Chimie &amp; Matériaux</option>
                   </select>
+                  <FieldHint>{FIELD_GUIDES.sector.shortHint}</FieldHint>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Code douanier CN (8 chiffres, si export UE)
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.exportCnCode} />
                   <input
                     type="text"
                     value={exportCnCode}
                     onChange={(e) => setExportCnCode(e.target.value)}
-                    placeholder="Ex: 7209 16 90"
+                    placeholder={FIELD_GUIDES.exportCnCode.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.exportCnCode.shortHint}</FieldHint>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Produit principal fabriqué / exporté
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.exportProductName} />
                   <input
                     type="text"
                     value={exportProductName}
                     onChange={(e) => setExportProductName(e.target.value)}
-                    placeholder="Désignation commerciale du produit"
+                    placeholder={FIELD_GUIDES.exportProductName.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Production annuelle totale (tonnes/an)
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.annualProductionTons} />
                   <input
                     type="number"
                     min="0"
                     value={annualProductionTons}
                     onChange={(e) => setAnnualProductionTons(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.annualProductionTons.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.annualProductionTons.shortHint}</FieldHint>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                    Volume exporté vers l&apos;UE (tonnes/an)
-                  </label>
+                  <FieldLabel guide={FIELD_GUIDES.annualExportTons} />
                   <input
                     type="number"
                     min="0"
                     value={annualExportTons}
                     onChange={(e) => setAnnualExportTons(e.target.value)}
-                    placeholder="0"
+                    placeholder={FIELD_GUIDES.annualExportTons.placeholder}
                     className="w-full rounded-xl bg-black/40 border border-white/[0.1] px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
                   />
+                  <FieldHint>{FIELD_GUIDES.annualExportTons.shortHint}</FieldHint>
+                  {parseNum(annualProductionTons) > 0 &&
+                    parseNum(annualExportTons) > parseNum(annualProductionTons) && (
+                      <FieldWarning>
+                        Le volume exporté vers l&apos;UE dépasse la production annuelle totale.
+                      </FieldWarning>
+                    )}
                 </div>
               </div>
             </div>
@@ -464,29 +466,31 @@ export function FactoryOnboardingModal() {
                   <span className="text-[11px] text-slate-500 font-mono">Laissez vide si indisponible</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Mois (1-12)</label>
+                    <FieldLabel guide={FIELD_GUIDES.month} />
                     <input
                       type="number"
                       min="1"
                       max="12"
                       value={month}
                       onChange={(e) => setMonth(Number(e.target.value) || 1)}
+                      placeholder={FIELD_GUIDES.month.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Année</label>
+                    <FieldLabel guide={FIELD_GUIDES.year} />
                     <input
                       type="number"
                       value={year}
                       onChange={(e) => setYear(Number(e.target.value) || 2026)}
+                      placeholder={FIELD_GUIDES.year.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-[11px] text-slate-400 mb-1">Régime tarifaire STEG</label>
+                  <div className="sm:col-span-2">
+                    <FieldLabel guide={FIELD_GUIDES.tariffRegime} />
                     <select
                       value={tariffRegime}
                       onChange={(e) => setTariffRegime(e.target.value as StegTariffType)}
@@ -499,78 +503,84 @@ export function FactoryOnboardingModal() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">kWh Jour</label>
+                    <FieldLabel guide={FIELD_GUIDES.kwhJour} />
                     <input
                       type="number"
                       min="0"
                       value={kwhJour}
                       onChange={(e) => setKwhJour(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.kwhJour.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-amber-300 mb-1">kWh Pointe</label>
+                    <FieldLabel guide={FIELD_GUIDES.kwhPointe} tone="amber" />
                     <input
                       type="number"
                       min="0"
                       value={kwhPointe}
                       onChange={(e) => setKwhPointe(e.target.value)}
-                      placeholder="0"
-                      className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                      placeholder={FIELD_GUIDES.kwhPointe.placeholder}
+                      className="w-full rounded-lg bg-black/40 border border-amber-500/25 px-3 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">kWh Soir</label>
+                    <FieldLabel guide={FIELD_GUIDES.kwhSoir} />
                     <input
                       type="number"
                       min="0"
                       value={kwhSoir}
                       onChange={(e) => setKwhSoir(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.kwhSoir.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">kWh Nuit</label>
+                    <FieldLabel guide={FIELD_GUIDES.kwhNuit} />
                     <input
                       type="number"
                       min="0"
                       value={kwhNuit}
                       onChange={(e) => setKwhNuit(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.kwhNuit.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">P. Souscrite (kVA)</label>
+                    <FieldLabel guide={FIELD_GUIDES.pSouscriteKva} />
                     <input
                       type="number"
                       min="0"
                       value={pSouscriteKva}
                       onChange={(e) => setPSouscriteKva(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.pSouscriteKva.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">P. Max Appelée (kVA)</label>
+                    <FieldLabel guide={FIELD_GUIDES.pMaxAppeleeKva} />
                     <input
                       type="number"
                       min="0"
                       value={pMaxAppeleeKva}
                       onChange={(e) => setPMaxAppeleeKva(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.pMaxAppeleeKva.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
+                    {parseNum(pSouscriteKva) > 0 && parseNum(pMaxAppeleeKva) > parseNum(pSouscriteKva) && (
+                      <FieldWarning>
+                        Dépassement de +{(parseNum(pMaxAppeleeKva) - parseNum(pSouscriteKva)).toFixed(0)} kVA
+                        (pénalité 25 TND/kVA/mois).
+                      </FieldWarning>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Facteur cos φ</label>
+                    <FieldLabel guide={FIELD_GUIDES.cosPhi} />
                     <input
                       type="number"
                       step="0.01"
@@ -578,18 +588,24 @@ export function FactoryOnboardingModal() {
                       max="1"
                       value={cosPhi}
                       onChange={(e) => setCosPhi(e.target.value)}
-                      placeholder="0.00"
+                      placeholder={FIELD_GUIDES.cosPhi.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
+                    <FieldHint>{FIELD_GUIDES.cosPhi.shortHint}</FieldHint>
+                    {parseNum(cosPhi) > 0 && (parseNum(cosPhi) < 0.5 || parseNum(cosPhi) > 1) && (
+                      <FieldWarning>
+                        Un cos φ industriel se situe entre 0,50 et 1,00 (ex. 0,78).
+                      </FieldWarning>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Total Facture TTC (TND)</label>
+                    <FieldLabel guide={FIELD_GUIDES.totalTtcTnd} />
                     <input
                       type="number"
                       min="0"
                       value={totalTtcTnd}
                       onChange={(e) => setTotalTtcTnd(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.totalTtcTnd.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
@@ -597,36 +613,36 @@ export function FactoryOnboardingModal() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Pénalité Réactive (TND/mois)</label>
+                    <FieldLabel guide={FIELD_GUIDES.reactivePenaltyTnd} />
                     <input
                       type="number"
                       min="0"
                       value={reactivePenaltyTnd}
                       onChange={(e) => setReactivePenaltyTnd(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.reactivePenaltyTnd.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Gaz Naturel (Nm³/mois)</label>
+                    <FieldLabel guide={FIELD_GUIDES.naturalGasM3} />
                     <input
                       type="number"
                       min="0"
                       value={naturalGasM3}
                       onChange={(e) => setNaturalGasM3(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.naturalGasM3.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Fuel Lourd (tonnes/mois)</label>
+                    <FieldLabel guide={FIELD_GUIDES.heavyFuelTons} />
                     <input
                       type="number"
                       min="0"
                       step="0.1"
                       value={heavyFuelTons}
                       onChange={(e) => setHeavyFuelTons(e.target.value)}
-                      placeholder="0"
+                      placeholder={FIELD_GUIDES.heavyFuelTons.placeholder}
                       className="w-full rounded-lg bg-black/40 border border-white/[0.1] px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
                     />
                   </div>

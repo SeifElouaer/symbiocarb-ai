@@ -8,6 +8,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/i18n/use-translation';
 import { useAudit } from '@/lib/audit/audit-context';
+import { FIELD_GUIDES } from '@/lib/ux/field-guides';
+import { FieldLabel, FieldHint, FieldWarning } from '@/components/ui/FieldLabel';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { StegTariffType } from '@/types';
 import { Upload, CheckCircle2, AlertCircle, Save } from 'lucide-react';
@@ -42,7 +44,8 @@ export default function OcrPage() {
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
 
     setFileName(file.name);
@@ -99,6 +102,7 @@ export default function OcrPage() {
     } catch {
       setScanError('Erreur réseau lors de la lecture du document.');
     } finally {
+      input.value = '';
       setIsScanning(false);
     }
   };
@@ -225,115 +229,128 @@ export default function OcrPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3.5 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">District STEG</label>
+              <FieldLabel guide={FIELD_GUIDES.districtSteg} />
               <input
                 type="text"
                 value={formData.districtSteg}
                 onChange={(e) => setFormData({ ...formData, districtSteg: e.target.value })}
-                placeholder="District"
+                placeholder={FIELD_GUIDES.districtSteg.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Mois</label>
+                <FieldLabel guide={FIELD_GUIDES.month} />
                 <input
                   type="number"
                   min="1"
                   max="12"
                   value={formData.billingMonth}
                   onChange={(e) => setFormData({ ...formData, billingMonth: parseInt(e.target.value, 10) || 1 })}
+                  placeholder={FIELD_GUIDES.month.placeholder}
                   className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Année</label>
+                <FieldLabel guide={FIELD_GUIDES.year} />
                 <input
                   type="number"
                   value={formData.billingYear}
                   onChange={(e) => setFormData({ ...formData, billingYear: parseInt(e.target.value, 10) || 2026 })}
+                  placeholder={FIELD_GUIDES.year.placeholder}
                   className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">P. Souscrite (kVA)</label>
+              <FieldLabel guide={FIELD_GUIDES.pSouscriteKva} />
               <input
                 type="number"
                 min="0"
                 value={formData.pSouscriteKva || ''}
                 onChange={(e) => setFormData({ ...formData, pSouscriteKva: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.pSouscriteKva.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              <FieldHint>{FIELD_GUIDES.pSouscriteKva.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">P. Max Appelée (kVA)</label>
+              <FieldLabel guide={FIELD_GUIDES.pMaxAppeleeKva} />
               <input
                 type="number"
                 min="0"
                 value={formData.pMaxAppeleeKva || ''}
                 onChange={(e) => setFormData({ ...formData, pMaxAppeleeKva: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.pMaxAppeleeKva.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              {formData.pSouscriteKva > 0 && formData.pMaxAppeleeKva > formData.pSouscriteKva && (
+                <FieldWarning>
+                  Dépassement de +{(formData.pMaxAppeleeKva - formData.pSouscriteKva).toFixed(0)} kVA
+                  détecté (pénalité STEG 25 TND/kVA/mois).
+                </FieldWarning>
+              )}
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">kWh Jour</label>
+              <FieldLabel guide={FIELD_GUIDES.kwhJour} />
               <input
                 type="number"
                 min="0"
                 value={formData.kwhJour || ''}
                 onChange={(e) => setFormData({ ...formData, kwhJour: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.kwhJour.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              <FieldHint>{FIELD_GUIDES.kwhJour.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-amber-300 mb-1">kWh Pointe</label>
+              <FieldLabel guide={FIELD_GUIDES.kwhPointe} tone="amber" />
               <input
                 type="number"
                 min="0"
                 value={formData.kwhPointe || ''}
                 onChange={(e) => setFormData({ ...formData, kwhPointe: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.kwhPointe.placeholder}
                 className="w-full rounded-xl border border-amber-500/30 bg-amber-500/5 p-2.5 text-amber-200 font-mono focus:outline-none focus:border-amber-500"
               />
+              <FieldHint>{FIELD_GUIDES.kwhPointe.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">kWh Soir</label>
+              <FieldLabel guide={FIELD_GUIDES.kwhSoir} />
               <input
                 type="number"
                 min="0"
                 value={formData.kwhSoir || ''}
                 onChange={(e) => setFormData({ ...formData, kwhSoir: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.kwhSoir.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              <FieldHint>{FIELD_GUIDES.kwhSoir.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">kWh Nuit</label>
+              <FieldLabel guide={FIELD_GUIDES.kwhNuit} />
               <input
                 type="number"
                 min="0"
                 value={formData.kwhNuit || ''}
                 onChange={(e) => setFormData({ ...formData, kwhNuit: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.kwhNuit.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              <FieldHint>{FIELD_GUIDES.kwhNuit.shortHint}</FieldHint>
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Facteur cos φ</label>
+              <FieldLabel guide={FIELD_GUIDES.cosPhi} />
               <input
                 type="number"
                 step="0.001"
@@ -341,35 +358,42 @@ export default function OcrPage() {
                 max="1"
                 value={formData.cosPhi || ''}
                 onChange={(e) => setFormData({ ...formData, cosPhi: parseFloat(e.target.value) || 0 })}
-                placeholder="0.00"
+                placeholder={FIELD_GUIDES.cosPhi.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              <FieldHint>{FIELD_GUIDES.cosPhi.shortHint}</FieldHint>
+              {formData.cosPhi > 0 && (formData.cosPhi < 0.5 || formData.cosPhi > 1) && (
+                <FieldWarning>
+                  Un cos φ industriel se situe entre 0,50 et 1,00 (ex. 0,78).
+                </FieldWarning>
+              )}
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Pénalité Réactive (TND)</label>
+              <FieldLabel guide={FIELD_GUIDES.reactivePenaltyTnd} />
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={formData.reactivePenaltyTnd || ''}
                 onChange={(e) => setFormData({ ...formData, reactivePenaltyTnd: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.reactivePenaltyTnd.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            <div className="col-span-2">
-              <label className="block text-[11px] text-slate-400 mb-1">Total Facture TTC (TND)</label>
+            <div className="sm:col-span-2">
+              <FieldLabel guide={FIELD_GUIDES.totalTtcTnd} />
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={formData.totalTtcTnd || ''}
                 onChange={(e) => setFormData({ ...formData, totalTtcTnd: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
+                placeholder={FIELD_GUIDES.totalTtcTnd.placeholder}
                 className="w-full rounded-xl border border-white/[0.1] bg-black/40 p-2.5 text-white font-mono focus:outline-none focus:border-emerald-500"
               />
+              <FieldHint>{FIELD_GUIDES.totalTtcTnd.shortHint}</FieldHint>
             </div>
           </div>
 
