@@ -10,6 +10,7 @@ import {
   generateCbamSupplierXml,
   validateCbamXmlInput,
 } from '@/lib/engine/cbam-xml';
+import { compareDefaultVsActual } from '@/lib/engine/cbam-default-comparator';
 
 export async function POST(req: NextRequest) {
   let payload: CbamXmlPayload;
@@ -33,7 +34,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const xmlContent = generateCbamSupplierXml(payload, validation.cbamResult);
+  const comparison =
+    payload.defaultComparisonInformative ??
+    (() => {
+      const cmp = compareDefaultVsActual({
+        cbamResult: validation.cbamResult!,
+        overrideDefaultSee: payload.euDefaultSeeOverride,
+      });
+      return cmp.hasDefaultValue
+        ? {
+            defaultSeeBase: cmp.defaultSeeBase,
+            markupPct: cmp.markupPct,
+            defaultSeeWithMarkup: cmp.defaultSeeWithMarkup,
+            liabilityDefaultEur: cmp.liabilityDefaultEur,
+            liabilityActualEur: cmp.liabilityActualEur,
+            savingForImporterEur: cmp.savingForImporterEur,
+            savingPerTonneEur: cmp.savingPerTonneEur,
+          }
+        : null;
+    })();
+
+  const xmlContent = generateCbamSupplierXml(
+    { ...payload, defaultComparisonInformative: comparison },
+    validation.cbamResult
+  );
   const filename = buildCbamXmlFilename(validation.cbamResult.cnCode8);
 
   return new NextResponse(xmlContent, {

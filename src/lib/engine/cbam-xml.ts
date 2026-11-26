@@ -31,6 +31,7 @@ export interface CbamXmlPayload {
   cbamReportingYear?: number;
   cbamCertificatePriceEur?: number;
   carbonPricePaidAbroadEur?: number;
+  euDefaultSeeOverride?: number | null;
   defaultComparisonInformative?: {
     defaultSeeBase: number;
     markupPct: number;

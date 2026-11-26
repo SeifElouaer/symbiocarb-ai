@@ -7,6 +7,7 @@
 // ==============================================================================
 
 import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n/use-translation';
 import { useAudit } from '@/lib/audit/audit-context';
 import { SectionHeader } from '@/components/layout/SectionHeader';
@@ -20,6 +21,9 @@ import {
   isCbamPrecursorCnCode,
 } from '@/lib/engine/cbam-config';
 import { projectCbamLiabilityByYear } from '@/lib/engine/cbam-calculator';
+import { compareDefaultVsActual } from '@/lib/engine/cbam-default-comparator';
+import { lookupDefaultValue } from '@/lib/engine/cbam-default-values';
+import { formatSignedAmount } from '@/lib/format/signed-amount';
 import {
   buildCbamInputFromPayload,
   buildCbamXmlFilename,
@@ -35,6 +39,8 @@ import {
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
+  Copy,
+  Check,
   Info,
 } from 'lucide-react';
 import {
@@ -66,6 +72,7 @@ export default function CbamPage() {
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
   const [isExportingXml, setIsExportingXml] = useState(false);
   const [xmlError, setXmlError] = useState<string | null>(null);
+  const [copiedPitch, setCopiedPitch] = useState(false);
 
   // Inline BOM entry form
   const [bomName, setBomName] = useState('');
@@ -77,6 +84,27 @@ export default function CbamPage() {
   const cbamResult = results.cbam;
   const corp = cbamResult.corporateFootprint;
   const cbam = cbamResult.cbamScope;
+
+  const tableDefaultEntry = useMemo(
+    () => lookupDefaultValue(auditData.exportCnCode, 'TN'),
+    [auditData.exportCnCode]
+  );
+
+  const defaultComparison = useMemo(
+    () =>
+      compareDefaultVsActual({
+        cbamResult,
+        overrideDefaultSee: auditData.euDefaultSeeOverride,
+      }),
+    [cbamResult, auditData.euDefaultSeeOverride]
+  );
+
+  const displayedDefaultSeeInput =
+    auditData.euDefaultSeeOverride !== null && auditData.euDefaultSeeOverride > 0
+      ? String(auditData.euDefaultSeeOverride)
+      : defaultComparison.isFromTable && defaultComparison.defaultSeeBase > 0
+      ? String(defaultComparison.defaultSeeBase)
+      : '';
 
   const xmlPayload = useMemo(
     () => ({
@@ -101,8 +129,20 @@ export default function CbamPage() {
       cbamReportingYear: auditData.cbamReportingYear,
       cbamCertificatePriceEur: auditData.cbamCertificatePriceEur,
       carbonPricePaidAbroadEur: auditData.carbonPricePaidAbroadEur,
+      euDefaultSeeOverride: auditData.euDefaultSeeOverride,
+      defaultComparisonInformative: defaultComparison.hasDefaultValue
+        ? {
+            defaultSeeBase: defaultComparison.defaultSeeBase,
+            markupPct: defaultComparison.markupPct,
+            defaultSeeWithMarkup: defaultComparison.defaultSeeWithMarkup,
+            liabilityDefaultEur: defaultComparison.liabilityDefaultEur,
+            liabilityActualEur: defaultComparison.liabilityActualEur,
+            savingForImporterEur: defaultComparison.savingForImporterEur,
+            savingPerTonneEur: defaultComparison.savingPerTonneEur,
+          }
+        : null,
     }),
-    [auditData]
+    [auditData, defaultComparison]
   );
 
   const xmlValidation = useMemo(() => validateCbamXmlInput(xmlPayload), [xmlPayload]);
@@ -557,6 +597,173 @@ export default function CbamPage() {
         </div>
       </div>
 
+      {/* EU Default Values vs Verified Real Data Comparator (Task 3) */}
+      <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-6 space-y-5">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h3 className="text-base font-bold text-white">{t.cbam.defaultComparatorTitle}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {cbam.reportingYear} · +{defaultComparison.markupPct}% ·{' '}
+              {tableDefaultEntry ? 'Pré-rempli (Tunisie — à vérifier)' : t.cbam.defaultMissingNotice}
+            </p>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                {t.cbam.defaultInputLabel}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={displayedDefaultSeeInput}
+                placeholder={t.cbam.defaultInputPlaceholder}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  updateAuditData({
+                    euDefaultSeeOverride:
+                      e.target.value === '' ? null : Number.isFinite(val) && val > 0 ? val : 0,
+                  });
+                }}
+                className="w-56 rounded-xl bg-black/40 border border-white/[0.12] px-3 py-2 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none tabular-nums"
+              />
+            </div>
+            {auditData.euDefaultSeeOverride !== null && tableDefaultEntry && (
+              <button
+                type="button"
+                onClick={() => updateAuditData({ euDefaultSeeOverride: null })}
+                className="rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[11px] font-medium text-slate-300 hover:bg-white/[0.08]"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
+
+        {!defaultComparison.hasDefaultValue ? (
+          <div className="rounded-xl border border-dashed border-white/[0.12] bg-black/20 p-5 text-xs text-slate-400">
+            {hasValidSee ? t.cbam.defaultMissingNotice : t.cockpit.emptyValue}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column: EU Default Values (Crimson) */}
+              <div className="rounded-xl border border-red-500/30 bg-red-500/[0.06] p-4 space-y-2">
+                <div className="text-xs font-bold text-red-300">{t.cbam.defaultColTitle}</div>
+                <div className="text-2xl font-black font-mono text-red-400 tabular-nums">
+                  {defaultComparison.liabilityDefaultEur.toLocaleString(numLocale)} €
+                </div>
+                <div className="text-[11px] font-mono text-slate-300 space-y-0.5">
+                  <div>
+                    ≈ {defaultComparison.liabilityDefaultTnd.toLocaleString(numLocale)} TND
+                  </div>
+                  <div>
+                    SEE base {defaultComparison.defaultSeeBase} + {defaultComparison.markupPct}% ={' '}
+                    <span className="text-red-300 font-bold">
+                      {defaultComparison.defaultSeeWithMarkup} tCO₂e/t
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Verified Real Data (Emerald) */}
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-4 space-y-2">
+                <div className="text-xs font-bold text-emerald-300">{t.cbam.actualColTitle}</div>
+                <div className="text-2xl font-black font-mono text-emerald-400 tabular-nums">
+                  {defaultComparison.liabilityActualEur.toLocaleString(numLocale)} €
+                </div>
+                <div className="text-[11px] font-mono text-slate-300 space-y-0.5">
+                  <div>
+                    ≈ {defaultComparison.liabilityActualTnd.toLocaleString(numLocale)} TND
+                  </div>
+                  <div>
+                    SEE CBAM :{' '}
+                    <span className="text-emerald-300 font-bold">
+                      {defaultComparison.actualSee} tCO₂e/t
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {(() => {
+              const savingEurFmt = formatSignedAmount(
+                defaultComparison.savingForImporterEur,
+                '€',
+                locale
+              );
+              const perTonFmt = formatSignedAmount(
+                defaultComparison.savingPerTonneEur,
+                '€/t',
+                locale,
+                { maximumFractionDigits: 2 }
+              );
+              const pitchSentence =
+                locale === 'ar-TN'
+                  ? `اعتماد بيانات منشأتنا المدققة بدلاً من القيم الافتراضية الأوروبية يقلّص كلفة CBAM على منتجاتنا بـ ${defaultComparison.savingPerTonneEur} €/طن.`
+                  : locale === 'en'
+                  ? `Using our verified installation data instead of EU default values reduces your CBAM cost by ${defaultComparison.savingPerTonneEur} €/t on our products.`
+                  : `L'utilisation de nos données d'installation vérifiées au lieu des valeurs par défaut de l'UE réduit votre coût CBAM de ${defaultComparison.savingPerTonneEur} €/t sur nos produits.`;
+
+              return (
+                <div
+                  className={`rounded-xl border p-4 space-y-3 ${
+                    defaultComparison.isRealDataWorse
+                      ? 'border-red-500/35 bg-red-500/10'
+                      : 'border-emerald-500/35 bg-emerald-500/10'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="text-xs font-bold text-white">
+                      {defaultComparison.isRealDataWorse
+                        ? t.cbam.defaultWorseNotice
+                        : 'Économie nette pour votre client importateur UE'}
+                    </div>
+                    <div className="flex items-center gap-3 font-mono text-sm font-black tabular-nums">
+                      <span className={savingEurFmt.colorClass}>{savingEurFmt.text}</span>
+                      <span className="text-slate-400">·</span>
+                      <span className={perTonFmt.colorClass}>{perTonFmt.text}</span>
+                      <span className="text-xs text-slate-300 font-normal">
+                        ({defaultComparison.savingForImporterTnd.toLocaleString(numLocale)} TND)
+                      </span>
+                    </div>
+                  </div>
+
+                  {defaultComparison.isRealDataWorse ? (
+                    <Link
+                      href="/plan"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 text-black px-3 py-1.5 text-xs font-bold hover:bg-amber-400"
+                    >
+                      <span>{t.cockpit.openActionPlan}</span>
+                    </Link>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg bg-black/35 border border-white/[0.08] px-3 py-2">
+                      <span className="text-xs text-slate-200 italic">&ldquo;{pitchSentence}&rdquo;</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                            navigator.clipboard.writeText(pitchSentence).then(() => {
+                              setCopiedPitch(true);
+                              setTimeout(() => setCopiedPitch(false), 2000);
+                            });
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-1.5 text-[11px] font-bold shrink-0"
+                      >
+                        {copiedPitch ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        <span>{copiedPitch ? t.cbam.copied : t.cbam.copyClientPitch}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </div>
+
       {/* Phase-In Trajectory Chart (2026-2034) + Timeline Facts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-4">
@@ -804,6 +1011,7 @@ export default function CbamPage() {
         companyName={auditData.companyName || 'Entreprise'}
         quarter="T1 (Q1)"
         reportingYear={cbam.reportingYear}
+        defaultComparison={defaultComparison}
       />
     </div>
   );

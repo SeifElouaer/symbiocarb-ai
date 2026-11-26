@@ -10,6 +10,7 @@ import React from 'react';
 import { X, Printer, ShieldCheck, Lock } from 'lucide-react';
 import { CbamCalculationResult, BomEntry } from '@/types';
 import { STEG_GRID_EF_KG_CO2E_PER_KWH } from '@/lib/engine/cbam-config';
+import { CbamDefaultComparisonResult } from '@/lib/engine/cbam-default-comparator';
 
 interface AuditReportDialogProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface AuditReportDialogProps {
   companyName: string;
   quarter: string;
   reportingYear: number;
+  defaultComparison?: CbamDefaultComparisonResult | null;
 }
 
 export function AuditReportDialog({
@@ -29,6 +31,7 @@ export function AuditReportDialog({
   companyName,
   quarter,
   reportingYear,
+  defaultComparison,
 }: AuditReportDialogProps) {
   if (!isOpen) return null;
 
@@ -168,6 +171,35 @@ export function AuditReportDialog({
               </div>
             </div>
           </div>
+
+          {/* Default vs Actual Comparison (when available) */}
+          {defaultComparison && defaultComparison.hasDefaultValue && (
+            <div className="rounded-xl border border-slate-300 bg-slate-50 p-4 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                Comparatif : Valeurs par Défaut UE (+{defaultComparison.markupPct}%) vs Données Réelles Vérifiées
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-xs font-mono">
+                <div>
+                  <div className="text-slate-500 font-sans text-[11px]">Avec valeurs par défaut UE</div>
+                  <div className="font-bold text-red-700">
+                    {defaultComparison.liabilityDefaultEur.toLocaleString('fr-FR')} € (SEE {defaultComparison.defaultSeeWithMarkup} t/t)
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500 font-sans text-[11px]">Avec vos données vérifiées</div>
+                  <div className="font-bold text-emerald-700">
+                    {defaultComparison.liabilityActualEur.toLocaleString('fr-FR')} € (SEE {defaultComparison.actualSee} t/t)
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500 font-sans text-[11px]">Économie pour l&apos;importateur UE</div>
+                  <div className={`font-bold ${defaultComparison.savingForImporterEur >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    {defaultComparison.savingForImporterEur.toLocaleString('fr-FR')} € ({defaultComparison.savingPerTonneEur} €/t)
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* BOM Items Table */}
           <div className="space-y-2">
