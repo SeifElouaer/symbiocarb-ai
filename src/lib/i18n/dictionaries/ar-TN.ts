@@ -26,6 +26,15 @@ export const arTN = {
     demoTag: 'تجريبي',
   },
 
+  sectionHeader: {
+    methodology: 'المنهجية',
+    hideGuide: 'إخفاء الدليل',
+    objective: 'الهدف',
+    inputs: 'المعطيات المدخلة',
+    deliverables: 'المخرجات المحسوبة',
+    regulation: 'الأساس التنظيمي',
+  },
+
   nav: {
     dashboard: 'لوحة القيادة الصناعية',
     energy: 'طاقة الستاغ والمنح',
@@ -336,6 +345,17 @@ export const arTN = {
     cbamBadge: 'CBAM',
     pvControlsTitle: 'معطيات الطاقة الشمسية على السطح وترحيل الأحمال',
     precursorControlsTitle: 'التحول إلى مورّد مواد أولية منخفض الكربون (CBAM)',
+    roofAreaLabel: 'مساحة السطح المتاحة (م²، اختياري — 6 م²/kWp)',
+    roofAreaPlaceholder: 'غير محددة (80% نهار)',
+    pvYieldLabel: 'الإنتاجية الشمسية (kWh/kWp/سنة)',
+    pvCapexLabel: 'كلفة الطاقة الشمسية (د/kWp)',
+    flexShareLabel: 'نسبة الأحمال القابلة للترحيل',
+    addPrecursorFirst: 'أضف أولاً مادة أولية خاضعة لـ CBAM في جدول المواد.',
+    altEfLabel: 'معامل انبعاث المورّد البديل (tCO₂e/t)',
+    premiumLabel: 'فارق السعر الإضافي (د/طن)',
+    yrsUnit: 'سنة',
+    tco2eYrUnit: 'طن كربون/سنة',
+    tndYrUnit: 'د/سنة',
     levers: {
       cosPhi: 'تعويض الطاقة الارتكاسية (cos φ ← 0.95)',
       loadShifting: 'ترحيل الأحمال من الذروة إلى الليل',

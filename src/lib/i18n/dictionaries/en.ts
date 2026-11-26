@@ -25,6 +25,15 @@ export const en = {
     demoTag: 'DEMO',
   },
 
+  sectionHeader: {
+    methodology: 'Methodology',
+    hideGuide: 'Hide guide',
+    objective: 'Objective',
+    inputs: 'Input data',
+    deliverables: 'Calculated deliverables',
+    regulation: 'Regulatory basis',
+  },
+
   nav: {
     dashboard: 'Industrial Cockpit',
     energy: 'STEG Energy & Grants',
@@ -335,6 +344,17 @@ export const en = {
     cbamBadge: 'CBAM',
     pvControlsTitle: 'Rooftop Solar PV & Load Shifting Parameters',
     precursorControlsTitle: 'Low-Carbon Precursor Supplier Switch (CBAM)',
+    roofAreaLabel: 'Available roof area (m², optional — 6 m²/kWp)',
+    roofAreaPlaceholder: 'Uncapped (80% Day)',
+    pvYieldLabel: 'Specific solar yield (kWh/kWp/yr)',
+    pvCapexLabel: 'Solar PV CAPEX (TND/kWp)',
+    flexShareLabel: 'Flexible load share Pointe → Nuit',
+    addPrecursorFirst: 'Add a CBAM precursor to your BOM first.',
+    altEfLabel: 'Alternative supplier EF (tCO₂e/t)',
+    premiumLabel: 'Price premium (TND/t)',
+    yrsUnit: 'yrs',
+    tco2eYrUnit: 'tCO₂e/yr',
+    tndYrUnit: 'TND/yr',
     levers: {
       cosPhi: 'Reactive power compensation (cos φ → 0.95)',
       loadShifting: 'Peak-to-Night load shifting (Pointe → Nuit)',

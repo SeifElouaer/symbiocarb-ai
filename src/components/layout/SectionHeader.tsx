@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/use-translation';
 
 interface SectionHeaderProps {
   title: string;
@@ -29,6 +30,7 @@ export function SectionHeader({
   defaultExpanded = false,
 }: SectionHeaderProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const { t } = useTranslation();
 
   return (
     <div className="rounded-2xl glass-panel-elevated p-4 sm:p-5 border border-white/[0.08]">
@@ -43,10 +45,11 @@ export function SectionHeader({
         </div>
 
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
           className="btn-tactile flex items-center gap-1.5 text-xs text-slate-400 hover:text-white py-1 px-2.5 rounded-lg border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.06] transition-all shrink-0"
         >
-          <span className="font-medium">{expanded ? 'Masquer le guide' : 'Méthodologie'}</span>
+          <span className="font-medium">{expanded ? t.sectionHeader.hideGuide : t.sectionHeader.methodology}</span>
           {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
       </div>
@@ -54,12 +57,12 @@ export function SectionHeader({
       {expanded && (
         <div className="mt-4 pt-4 border-t border-white/[0.08] grid grid-cols-1 md:grid-cols-4 gap-4 text-xs animate-in fade-in duration-150">
           <div className="space-y-1.5">
-            <div className="font-semibold text-slate-200">Objectif</div>
+            <div className="font-semibold text-slate-200">{t.sectionHeader.objective}</div>
             <p className="text-slate-400 text-[11px] leading-relaxed">{objective}</p>
           </div>
 
           <div className="space-y-1.5">
-            <div className="font-semibold text-slate-200">Données d&apos;entrée</div>
+            <div className="font-semibold text-slate-200">{t.sectionHeader.inputs}</div>
             <ul className="text-slate-400 text-[11px] space-y-1">
               {inputs.map((inp, idx) => (
                 <li key={idx}>• {inp}</li>
@@ -68,7 +71,7 @@ export function SectionHeader({
           </div>
 
           <div className="space-y-1.5">
-            <div className="font-semibold text-slate-200">Livrables calculés</div>
+            <div className="font-semibold text-slate-200">{t.sectionHeader.deliverables}</div>
             <ul className="text-slate-400 text-[11px] space-y-1">
               {deliverables.map((deliv, idx) => (
                 <li key={idx}>✓ {deliv}</li>
@@ -77,7 +80,7 @@ export function SectionHeader({
           </div>
 
           <div className="space-y-1.5">
-            <div className="font-semibold text-slate-200">Base réglementaire</div>
+            <div className="font-semibold text-slate-200">{t.sectionHeader.regulation}</div>
             <p className="text-slate-400 text-[11px] leading-relaxed font-mono">{regulation}</p>
           </div>
         </div>

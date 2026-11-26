@@ -266,27 +266,27 @@ export default function EnergyPage() {
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-2">
                 <div className="text-xs text-emerald-300 font-semibold flex items-center justify-between">
                   <span>Économie STEG Brute :</span>
-                  <span className={`font-mono font-bold text-sm tabular-nums ${grossFormatted.colorClass}`}>
+                  <span dir="ltr" className={`font-mono font-bold text-sm tabular-nums whitespace-nowrap inline-block ${grossFormatted.colorClass}`}>
                     {grossFormatted.text}
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-400 border-t border-white/[0.06] pt-1.5 space-y-1">
                   <div className="flex justify-between">
                     <span>Surprime salariale nuit (+50%) :</span>
-                    <span className={`font-mono tabular-nums ${laborFormatted.colorClass}`}>
+                    <span dir="ltr" className={`font-mono tabular-nums whitespace-nowrap inline-block ${laborFormatted.colorClass}`}>
                       {laborFormatted.text}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Navettes ouvriers (nuit) :</span>
-                    <span className={`font-mono tabular-nums ${transportFormatted.colorClass}`}>
+                    <span dir="ltr" className={`font-mono tabular-nums whitespace-nowrap inline-block ${transportFormatted.colorClass}`}>
                       {transportFormatted.text}
                     </span>
                   </div>
                 </div>
                 <div className="text-xs border-t border-emerald-500/20 pt-1.5 font-bold flex items-center justify-between text-slate-200">
                   <span>Gain Réel Net Entreprise :</span>
-                  <span className={`font-mono text-sm tabular-nums ${netFormatted.colorClass}`}>
+                  <span dir="ltr" className={`font-mono text-sm tabular-nums whitespace-nowrap inline-block ${netFormatted.colorClass}`}>
                     {netFormatted.text}
                   </span>
                 </div>

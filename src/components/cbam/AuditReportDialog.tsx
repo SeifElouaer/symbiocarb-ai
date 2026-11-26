@@ -71,6 +71,7 @@ export function AuditReportDialog({
             <button
               type="button"
               onClick={onClose}
+              aria-label="Fermer le rapport"
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <X className="h-5 w-5" />

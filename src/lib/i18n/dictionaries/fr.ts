@@ -28,6 +28,15 @@ export const fr = {
     demoTag: 'DÉMO',
   },
 
+  sectionHeader: {
+    methodology: 'Méthodologie',
+    hideGuide: 'Masquer le guide',
+    objective: 'Objectif',
+    inputs: 'Données d’entrée',
+    deliverables: 'Livrables calculés',
+    regulation: 'Base réglementaire',
+  },
+
   // Navigation
   nav: {
     dashboard: 'Tableau de Bord',
@@ -347,6 +356,17 @@ export const fr = {
     cbamBadge: 'CBAM',
     pvControlsTitle: 'Paramètres Solaire Photovoltaïque & Déplacement de charge',
     precursorControlsTitle: 'Changement de fournisseur précurseur bas-carbone (CBAM)',
+    roofAreaLabel: 'Surface toiture disponible (m², optionnel — 6 m²/kWp)',
+    roofAreaPlaceholder: 'Illimitée (80% Jour)',
+    pvYieldLabel: 'Productible solaire (kWh/kWp/an)',
+    pvCapexLabel: 'CAPEX Solaire (TND/kWp)',
+    flexShareLabel: 'Part effaçable Pointe → Nuit',
+    addPrecursorFirst: 'Ajoutez d’abord un précurseur CBAM dans votre nomenclature BOM.',
+    altEfLabel: 'FE fournisseur alternatif (tCO₂e/t)',
+    premiumLabel: 'Surcoût / prime prix (TND/t)',
+    yrsUnit: 'ans',
+    tco2eYrUnit: 'tCO₂e/an',
+    tndYrUnit: 'TND/an',
     levers: {
       cosPhi: 'Compensation énergie réactive (cos φ → 0,95)',
       loadShifting: 'Effacement & déplacement de charge Pointe → Nuit',

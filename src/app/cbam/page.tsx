@@ -721,9 +721,9 @@ export default function CbamPage() {
                         : 'Économie nette pour votre client importateur UE'}
                     </div>
                     <div className="flex items-center gap-3 font-mono text-sm font-black tabular-nums">
-                      <span className={savingEurFmt.colorClass}>{savingEurFmt.text}</span>
+                      <span dir="ltr" className={`inline-block whitespace-nowrap ${savingEurFmt.colorClass}`}>{savingEurFmt.text}</span>
                       <span className="text-slate-400">·</span>
-                      <span className={perTonFmt.colorClass}>{perTonFmt.text}</span>
+                      <span dir="ltr" className={`inline-block whitespace-nowrap ${perTonFmt.colorClass}`}>{perTonFmt.text}</span>
                       <span className="text-xs text-slate-300 font-normal">
                         ({defaultComparison.savingForImporterTnd.toLocaleString(numLocale)} TND)
                       </span>

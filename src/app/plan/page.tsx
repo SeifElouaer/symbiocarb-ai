@@ -91,7 +91,7 @@ export default function ActionPlanPage() {
     return { lever, idx, x, w, y, h, cumEndTco2e: Number((cumX * totalAbatement).toFixed(1)) };
   });
 
-  const netSavingFmt = formatSignedAmount(plan.totalAnnualNetSavingTnd, 'TND/an', locale);
+  const netSavingFmt = formatSignedAmount(plan.totalAnnualNetSavingTnd, t.plan.tndYrUnit, locale);
 
   return (
     <div className="space-y-6">
@@ -121,7 +121,7 @@ export default function ActionPlanPage() {
             {plan.hasAnyAvailableLever ? (
               <>
                 {plan.totalFootprintAvoidedTco2e.toLocaleString(numLocale)}{' '}
-                <span className="text-xs font-normal text-slate-400">tCO₂e/an</span>
+                <span className="text-xs font-normal text-slate-400">{t.plan.tco2eYrUnit}</span>
               </>
             ) : (
               <span className="text-slate-500">—</span>
@@ -135,7 +135,7 @@ export default function ActionPlanPage() {
             {plan.hasAnyAvailableLever ? (
               <>
                 {plan.totalCbamAvoidedTco2e.toLocaleString(numLocale)}{' '}
-                <span className="text-xs font-normal text-slate-400">tCO₂e/an</span>
+                <span className="text-xs font-normal text-slate-400">{t.plan.tco2eYrUnit}</span>
               </>
             ) : (
               <span className="text-slate-500">—</span>
@@ -161,7 +161,12 @@ export default function ActionPlanPage() {
 
         <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-1">
           <div className="text-xs text-slate-400">{t.plan.totalsAnnualNetSaving}</div>
-          <div className={`text-2xl font-extrabold font-mono tabular-nums ${plan.hasAnyAvailableLever ? netSavingFmt.colorClass : 'text-slate-500'}`}>
+          <div
+            dir="ltr"
+            className={`text-2xl font-extrabold font-mono tabular-nums whitespace-nowrap inline-block ${
+              plan.hasAnyAvailableLever ? netSavingFmt.colorClass : 'text-slate-500'
+            }`}
+          >
             {plan.hasAnyAvailableLever ? netSavingFmt.text : '—'}
           </div>
         </div>
@@ -177,11 +182,11 @@ export default function ActionPlanPage() {
           <div className="flex items-center gap-3 text-[11px] font-mono">
             <span className="inline-flex items-center gap-1.5 text-emerald-400">
               <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" />
-              &lt; 0 TND/t
+              <span dir="ltr" className="inline-block whitespace-nowrap">&lt; 0 TND/t</span>
             </span>
             <span className="inline-flex items-center gap-1.5 text-amber-400">
               <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" />
-              &gt; 0 TND/t
+              <span dir="ltr" className="inline-block whitespace-nowrap">&gt; 0 TND/t</span>
             </span>
             <span className="inline-flex items-center gap-1.5 text-blue-300">
               <span className="h-2.5 w-2.5 rounded-sm border border-blue-400 bg-blue-500/30" />
@@ -345,13 +350,13 @@ export default function ActionPlanPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                Surface toiture disponible (m², optionnel — 6 m²/kWp)
+                {t.plan.roofAreaLabel}
               </label>
               <input
                 type="number"
                 min="0"
                 value={auditData.solarRoofAreaM2 || ''}
-                placeholder="Illimitée (80% Jour)"
+                placeholder={t.plan.roofAreaPlaceholder}
                 onChange={(e) =>
                   updateAuditData({ solarRoofAreaM2: Math.max(0, Number(e.target.value) || 0) })
                 }
@@ -361,7 +366,7 @@ export default function ActionPlanPage() {
 
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                Productible solaire (kWh/kWp/an)
+                {t.plan.pvYieldLabel}
               </label>
               <input
                 type="number"
@@ -380,7 +385,7 @@ export default function ActionPlanPage() {
 
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                CAPEX Solaire (TND/kWp)
+                {t.plan.pvCapexLabel}
               </label>
               <input
                 type="number"
@@ -399,7 +404,7 @@ export default function ActionPlanPage() {
 
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                Part effaçable Pointe → Nuit ({auditData.flexibleLoadPct}%)
+                {t.plan.flexShareLabel} ({auditData.flexibleLoadPct}%)
               </label>
               <input
                 type="range"
@@ -418,7 +423,7 @@ export default function ActionPlanPage() {
           <h3 className="text-sm font-bold text-white">{t.plan.precursorControlsTitle}</h3>
           {cbamBomItems.length === 0 ? (
             <div className="rounded-xl border border-dashed border-white/[0.08] bg-black/20 p-4 text-xs text-slate-400 flex items-center justify-between gap-3">
-              <span>Ajoutez d&apos;abord un précurseur CBAM dans votre nomenclature BOM.</span>
+              <span>{t.plan.addPrecursorFirst}</span>
               <Link href="/cbam" className="text-blue-400 font-semibold shrink-0 hover:underline">
                 /cbam →
               </Link>
@@ -435,20 +440,20 @@ export default function ActionPlanPage() {
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-white">{m.name}</span>
                       <span className="font-mono text-[11px] text-slate-400">
-                        {m.quantityTons} t · actuel {m.efTco2ePerTon} tCO₂e/t
+                        {m.quantityTons} t · {m.efTco2ePerTon} tCO₂e/t
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-[10px] text-slate-400 mb-1">
-                          FE fournisseur alternatif (tCO₂e/t)
+                          {t.plan.altEfLabel}
                         </label>
                         <input
                           type="number"
                           min="0"
                           step="0.05"
                           value={sw ? sw.alternativeEfTco2ePerTon : ''}
-                          placeholder="Ex: 0.75 (EAF)"
+                          placeholder="0.75"
                           onChange={(e) => {
                             const val = parseFloat(e.target.value);
                             const next = { ...auditData.precursorSwitches };
@@ -467,7 +472,7 @@ export default function ActionPlanPage() {
                       </div>
                       <div>
                         <label className="block text-[10px] text-slate-400 mb-1">
-                          Surcoût / prime prix (TND/t)
+                          {t.plan.premiumLabel}
                         </label>
                         <input
                           type="number"
@@ -502,15 +507,15 @@ export default function ActionPlanPage() {
           <table className="w-full text-start text-xs">
             <thead className="bg-black/40 text-slate-400 border-b border-white/[0.06] font-mono text-[10px] uppercase">
               <tr>
-                <th className="py-2.5 px-4 text-start">#</th>
-                <th className="py-2.5 px-4 text-start">{t.plan.colLever}</th>
-                <th className="py-2.5 px-4 text-end">{t.plan.colCo2}</th>
-                <th className="py-2.5 px-4 text-end">{t.plan.colCbamCo2}</th>
-                <th className="py-2.5 px-4 text-end">{t.plan.colCapex}</th>
-                <th className="py-2.5 px-4 text-end">{t.plan.colAnnualSaving}</th>
-                <th className="py-2.5 px-4 text-end">{t.plan.colPayback}</th>
-                <th className="py-2.5 px-4 text-end">{t.plan.colCostPerTonne}</th>
-                <th className="py-2.5 px-4 text-end">{t.plan.assumptionsBtn}</th>
+                <th className="py-2.5 px-2.5 text-start">#</th>
+                <th className="py-2.5 px-2.5 text-start">{t.plan.colLever}</th>
+                <th className="py-2.5 px-2.5 text-end whitespace-nowrap">{t.plan.colCo2}</th>
+                <th className="py-2.5 px-2.5 text-end whitespace-nowrap">{t.plan.colCbamCo2}</th>
+                <th className="py-2.5 px-2.5 text-end whitespace-nowrap">{t.plan.colCapex}</th>
+                <th className="py-2.5 px-2.5 text-end whitespace-nowrap">{t.plan.colAnnualSaving}</th>
+                <th className="py-2.5 px-2.5 text-end whitespace-nowrap">{t.plan.colPayback}</th>
+                <th className="py-2.5 px-2.5 text-end whitespace-nowrap">{t.plan.colCostPerTonne}</th>
+                <th className="py-2.5 px-2.5 text-end whitespace-nowrap">{t.plan.assumptionsBtn}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05]">
@@ -524,10 +529,10 @@ export default function ActionPlanPage() {
                 return (
                   <React.Fragment key={lever.id}>
                     <tr className="text-slate-200 hover:bg-white/[0.02]">
-                      <td className="py-3 px-4 font-mono text-slate-400">
+                      <td className="py-3 px-2.5 font-mono text-slate-400">
                         {lever.isFinancialOnly ? '·' : idx + 1}
                       </td>
-                      <td className="py-3 px-4 font-medium text-white">
+                      <td className="py-3 px-2.5 font-medium text-white">
                         <div className="flex flex-wrap items-center gap-2">
                           <span>{getLeverLabel(lever.labelKey)}</span>
                           {lever.reducesCbamLiability && (
@@ -542,25 +547,25 @@ export default function ActionPlanPage() {
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-end font-mono tabular-nums">
+                      <td className="py-3 px-2.5 text-end font-mono tabular-nums whitespace-nowrap">
                         {lever.annualTco2eAvoided}
                       </td>
-                      <td className="py-3 px-4 text-end font-mono tabular-nums text-blue-300">
+                      <td className="py-3 px-2.5 text-end font-mono tabular-nums whitespace-nowrap text-blue-300">
                         {lever.cbamTco2eAvoided}
                       </td>
-                      <td className="py-3 px-4 text-end font-mono tabular-nums">
+                      <td className="py-3 px-2.5 text-end font-mono tabular-nums whitespace-nowrap">
                         {lever.capexTnd.toLocaleString(numLocale)}
                       </td>
-                      <td className={`py-3 px-4 text-end font-mono tabular-nums font-semibold ${savingFmt.colorClass}`}>
-                        {savingFmt.text}
+                      <td className={`py-3 px-2.5 text-end font-mono tabular-nums font-semibold whitespace-nowrap ${savingFmt.colorClass}`}>
+                        <span dir="ltr" className="inline-block whitespace-nowrap">{savingFmt.text}</span>
                       </td>
-                      <td className="py-3 px-4 text-end font-mono tabular-nums text-slate-300">
-                        {lever.paybackYears !== null ? `${lever.paybackYears} ans` : '—'}
+                      <td className="py-3 px-2.5 text-end font-mono tabular-nums whitespace-nowrap text-slate-300">
+                        {lever.paybackYears !== null ? `${lever.paybackYears} ${t.plan.yrsUnit}` : '—'}
                       </td>
-                      <td className={`py-3 px-4 text-end font-mono tabular-nums font-bold ${costFmt.colorClass}`}>
-                        {costFmt.text}
+                      <td className={`py-3 px-2.5 text-end font-mono tabular-nums font-bold whitespace-nowrap ${costFmt.colorClass}`}>
+                        <span dir="ltr" className="inline-block whitespace-nowrap">{costFmt.text}</span>
                       </td>
-                      <td className="py-3 px-4 text-end">
+                      <td className="py-3 px-2.5 text-end whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => toggleExpand(lever.id)}
@@ -573,7 +578,7 @@ export default function ActionPlanPage() {
                     </tr>
                     {isExpanded && (
                       <tr className="bg-black/30">
-                        <td colSpan={9} className="px-6 py-3 text-[11px] text-slate-300 space-y-1">
+                        <td colSpan={9} className="px-4 py-3 text-[11px] text-slate-300 space-y-1">
                           {lever.assumptions.map((a, aIdx) => (
                             <div key={aIdx} className="font-mono">
                               • {a}
@@ -591,8 +596,8 @@ export default function ActionPlanPage() {
                 const route = getMissingRoute(lever.id);
                 return (
                   <tr key={lever.id} className="bg-black/20 text-slate-500 opacity-75">
-                    <td className="py-3 px-4 font-mono">—</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-2.5 font-mono">—</td>
+                    <td className="py-3 px-2.5">
                       <div className="flex items-center gap-2">
                         {lever.id === 'bioclaira' && subscriptionPlan !== 'gold' && (
                           <Lock className="h-3.5 w-3.5 text-amber-400" />
@@ -603,13 +608,13 @@ export default function ActionPlanPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-end font-mono">—</td>
-                    <td className="py-3 px-4 text-end font-mono">—</td>
-                    <td className="py-3 px-4 text-end font-mono">—</td>
-                    <td className="py-3 px-4 text-end font-mono">—</td>
-                    <td className="py-3 px-4 text-end font-mono">—</td>
-                    <td className="py-3 px-4 text-end font-mono">—</td>
-                    <td className="py-3 px-4 text-end">
+                    <td className="py-3 px-2.5 text-end font-mono">—</td>
+                    <td className="py-3 px-2.5 text-end font-mono">—</td>
+                    <td className="py-3 px-2.5 text-end font-mono">—</td>
+                    <td className="py-3 px-2.5 text-end font-mono">—</td>
+                    <td className="py-3 px-2.5 text-end font-mono">—</td>
+                    <td className="py-3 px-2.5 text-end font-mono">—</td>
+                    <td className="py-3 px-2.5 text-end whitespace-nowrap">
                       <Link
                         href={route.href}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300"
