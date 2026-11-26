@@ -2,7 +2,7 @@
 
 // ==============================================================================
 // Module CBAM: EU Carbon Border Adjustment Mechanism & ISO 14064-1
-// Zero hardcoded auto-parts or mock Ben Arous factories; reads real factory state.
+// Uses unified cbam-calculator (via AuditContext results.cbam) and POST supplier XML.
 // ==============================================================================
 
 import React, { useState } from 'react';
@@ -11,18 +11,21 @@ import { useAudit } from '@/lib/audit/audit-context';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { AuditReportDialog } from '@/components/cbam/AuditReportDialog';
 import { FALLBACK_EMISSION_FACTORS } from '@/lib/supabase/fallback-data';
-import { calculateCbamSpecificEmbeddedEmissions } from '@/lib/engine/cbam-calculator';
-import { BomEntry, CbamCalculationResult } from '@/types';
-import { Download, Printer, Plus, Trash2 } from 'lucide-react';
+import { STEG_GRID_EF_KG_CO2E_PER_KWH } from '@/lib/engine/cbam-config';
+import { buildCbamXmlFilename, validateCbamXmlInput } from '@/lib/engine/cbam-xml';
+import { BomEntry } from '@/types';
+import { Download, Printer, Plus, Trash2, AlertCircle } from 'lucide-react';
 
 export default function CbamPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { auditData, results, addBomMaterial, removeBomMaterial, openAddDataModal } = useAudit();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [matchedResults, setMatchedResults] = useState(FALLBACK_EMISSION_FACTORS);
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
+  const [isExportingXml, setIsExportingXml] = useState(false);
+  const [xmlError, setXmlError] = useState<string | null>(null);
 
   // Inline BOM entry form
   const [bomName, setBomName] = useState('');
@@ -30,48 +33,66 @@ export default function CbamPage() {
   const [bomQty, setBomQty] = useState('');
   const [bomEf, setBomEf] = useState('');
 
-  const hasProduction = auditData.annualProductionTons > 0;
-  const fuelKwh =
-    (auditData.naturalGasM3 * 10 + auditData.heavyFuelTons * 11600 + auditData.dieselLiters * 10) * 12;
-  const elecKwh = results.kwhTotal * 12;
+  const numLocale = locale === 'en' ? 'en-US' : 'fr-TN';
+  const cbamResult = results.cbam;
 
-  const precursors = auditData.bomMaterials.map((m) => ({
-    name: m.name,
-    cnCode8: m.cnCode8 || '00000000',
-    quantityTons: m.quantityTons,
-    efTco2ePerTon: m.efTco2ePerTon,
-  }));
+  const xmlPayload = {
+    companyName: auditData.companyName,
+    fiscalId: auditData.fiscalId,
+    governorate: auditData.governorate,
+    industrialZone: auditData.industrialZone,
+    exportCnCode: auditData.exportCnCode,
+    exportProductName: auditData.exportProductName,
+    annualProductionTons: auditData.annualProductionTons,
+    annualExportTons: auditData.annualExportTons,
+    naturalGasM3: auditData.naturalGasM3,
+    heavyFuelTons: auditData.heavyFuelTons,
+    dieselLiters: auditData.dieselLiters,
+    kwhJour: auditData.kwhJour,
+    kwhPointe: auditData.kwhPointe,
+    kwhSoir: auditData.kwhSoir,
+    kwhNuit: auditData.kwhNuit,
+    steelTons: auditData.steelTons,
+    aluminumTons: auditData.aluminumTons,
+    bomMaterials: auditData.bomMaterials,
+    cbamReportingYear: auditData.cbamReportingYear,
+    cbamCertificatePriceEur: auditData.cbamCertificatePriceEur,
+    carbonPricePaidAbroadEur: auditData.carbonPricePaidAbroadEur,
+  };
 
-  const cbamResult: CbamCalculationResult = hasProduction
-    ? calculateCbamSpecificEmbeddedEmissions({
-        productName: auditData.exportProductName || 'Produit industriel non spécifié',
-        cnCode8: auditData.exportCnCode || '0000 00 00',
-        finishedProductTons: auditData.annualProductionTons,
-        scope1FuelKwh: fuelKwh,
-        scope2ElectricityKwh: elecKwh,
-        precursors,
-        euEtsPriceEur: 85.0,
-      })
-    : {
-        productName: auditData.exportProductName || 'Aucun produit déclaré',
-        cnCode8: auditData.exportCnCode || '—',
-        finishedProductTons: 0,
-        scope1DirectTco2e: results.scope1Tco2e,
-        scope2IndirectTco2e: results.scope2Tco2e,
-        scope3PrecursorsTco2e: results.scope3Tco2e,
-        totalEmbeddedTco2e: results.totalTco2e,
-        specificEmbeddedEmissionsTco2ePerTon: 0,
-        euEtsCarbonPriceEur: 85.0,
-        estimatedCbamTaxLiabilityEur: 0,
-        estimatedCbamTaxLiabilityTnd: 0,
-        freeAllocationBenchmarkGap: 0,
-        verificationStatus: 'PRE_AUDIT_DRAFT',
-        accreditationBodyId: 'ACCREDITATION-PENDING-ISO14065',
-        auditIntegrityHash: 'PENDING-DATA',
-        regulatoryDisclaimer:
-          'Renseignez votre production annuelle, vos combustibles et vos nomenclatures BOM pour calculer votre SEE spécifique.',
-        gridEmissionSource: 'STEG Réseau National Moyenne Tension (0.473 kgCO₂e/kWh)',
-      };
+  const xmlValidation = validateCbamXmlInput(xmlPayload);
+
+  const handleExportXml = async () => {
+    if (!xmlValidation.valid) return;
+    setIsExportingXml(true);
+    setXmlError(null);
+    try {
+      const res = await fetch('/api/export/cbam-xml', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(xmlPayload),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        setXmlError(errBody?.error || t.cbam.missingXmlHint);
+        return;
+      }
+      const xmlText = await res.text();
+      const blob = new Blob([xmlText], { type: 'application/xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = buildCbamXmlFilename(auditData.exportCnCode);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setXmlError(t.cbam.missingXmlHint);
+    } finally {
+      setIsExportingXml(false);
+    }
+  };
 
   const handleVectorSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,19 +132,6 @@ export default function CbamPage() {
     setBomEf('');
   };
 
-  const xmlQueryParams = new URLSearchParams({
-    company: auditData.companyName || 'Entreprise',
-    governorate: auditData.governorate || 'Tunisie',
-    zone: auditData.industrialZone || '',
-    cnCode: auditData.exportCnCode || '00000000',
-    product: auditData.exportProductName || 'Produit',
-    productionTons: String(auditData.annualProductionTons || 0),
-    scope1: String(results.scope1Tco2e),
-    scope2: String(results.scope2Tco2e),
-    scope3: String(results.scope3Tco2e),
-    see: String(results.specificEmbeddedEmissionsTco2ePerTon),
-  }).toString();
-
   const pdfBomEntries: BomEntry[] = auditData.bomMaterials.map((m) => ({
     id: m.id,
     org_id: 'factory',
@@ -147,40 +155,45 @@ export default function CbamPage() {
     },
   }));
 
+  const hasValidSee = cbamResult.hasProduction && cbamResult.cbamScope.isInCbamScope;
+
   return (
     <div className="space-y-6">
       <SectionHeader
         title={t.cbam.title}
         badge="Règlement (UE) 2023/956"
         badgeColor="bg-blue-500/10 text-blue-400 border-blue-500/20"
-        objective="Calculer les Émissions Spécifiques Incorporées (SEE) réelles de vos produits exportés, rapprocher vos nomenclatures BOM avec la base de facteurs d'émissions et générer votre XML CBAM."
+        objective={t.cbam.subtitle}
         inputs={[
           'Production annuelle et volume exporté UE (tonnes)',
-          'Combustibles directs Scope 1 (gaz naturel, fuel, gasoil)',
+          'Combustibles directs Scope 1 (gaz naturel Nm³, fuel lourd t, gasoil L)',
           'Électricité STEG Scope 2 et matières premières entrantes Scope 3',
         ]}
         deliverables={[
-          'SEE spécifique en tCO₂e / tonne de produit fini',
-          'Exposition financière CBAM estimée (cours ETS 85 €/t)',
-          'Fichier XML conforme DG TAXUD & attestation PDF',
+          'SEE spécifique CBAM (Scope B) et bilan ISO 14064-1 (Scope A)',
+          'Exposition estimée pour votre importateur UE',
+          t.cbam.exportXml,
         ]}
-        regulation="Règlement (UE) 2023/956, Règlement d'exécution (UE) 2023/1773 & ISO 14064-1"
+        regulation="Règlement (UE) 2023/956, Règlement d'exécution (UE) 2025/2620 & ISO 14064-1"
       />
 
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-white">
-            Déclaration CBAM — {auditData.companyName || 'Entreprise non configurée'}
+            {t.cbam.exportXml} — {auditData.companyName || '—'}
           </h2>
           <p className="text-xs text-slate-400 mt-0.5 font-mono">
-            Code douanier CN : {auditData.exportCnCode || 'Non défini'} • Production :{' '}
-            {auditData.annualProductionTons.toLocaleString('fr-TN')} t/an
+            CN : {auditData.exportCnCode || '—'} • Production :{' '}
+            {auditData.annualProductionTons > 0
+              ? `${auditData.annualProductionTons.toLocaleString(numLocale)} t/an`
+              : '—'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={() => openAddDataModal('cbam')}
             className="btn-tactile flex items-center gap-1.5 rounded-xl border border-white/[0.12] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white hover:bg-white/[0.08]"
           >
@@ -189,6 +202,7 @@ export default function CbamPage() {
           </button>
 
           <button
+            type="button"
             onClick={() => setIsPdfDialogOpen(true)}
             className="btn-tactile flex items-center gap-2 rounded-xl bg-white/[0.08] text-white px-3.5 py-2 text-xs font-bold hover:bg-white/[0.14]"
           >
@@ -196,35 +210,62 @@ export default function CbamPage() {
             <span>Rapport PDF</span>
           </button>
 
-          <a
-            href={`/api/export/cbam-xml?${xmlQueryParams}`}
-            download
-            className="btn-tactile flex items-center gap-2 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-bold text-black hover:bg-emerald-400"
+          <button
+            type="button"
+            onClick={handleExportXml}
+            disabled={!xmlValidation.valid || isExportingXml}
+            title={!xmlValidation.valid ? t.cbam.missingXmlHint : t.cbam.exportXml}
+            className={`btn-tactile flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+              xmlValidation.valid
+                ? 'bg-emerald-500 text-black hover:bg-emerald-400'
+                : 'bg-white/[0.06] text-slate-500 border border-white/[0.08] cursor-not-allowed'
+            }`}
           >
             <Download className="h-3.5 w-3.5" />
-            <span>Exporter XML UE</span>
-          </a>
+            <span>{isExportingXml ? '...' : t.cbam.exportXmlShort}</span>
+          </button>
         </div>
       </div>
 
-      {/* 4 Scorecards */}
+      {(!xmlValidation.valid || xmlError) && (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs text-amber-200 flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+          <span>{xmlError || t.cbam.missingXmlHint}</span>
+        </div>
+      )}
+
+      {/* 4 Scorecards (Unified from cbamResult — identical to cockpit, PDF & XML) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-1.5">
           <div className="text-xs text-slate-400 font-medium">{t.cbam.seeTitle}</div>
           <div className="text-2xl font-extrabold font-mono text-white tabular-nums">
-            {cbamResult.specificEmbeddedEmissionsTco2ePerTon}{' '}
-            <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e/t</span>
+            {hasValidSee ? (
+              <>
+                {cbamResult.cbamScope.cbamSeeTco2ePerTon}{' '}
+                <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e/t</span>
+              </>
+            ) : (
+              <span className="text-slate-500">—</span>
+            )}
           </div>
           <div className="text-[11px] text-slate-400">
-            Produit : {auditData.annualProductionTons.toLocaleString('fr-TN')} t/an
+            {cbamResult.hasProduction
+              ? `${auditData.annualProductionTons.toLocaleString(numLocale)} t/an`
+              : t.cockpit.emptyValue}
           </div>
         </div>
 
         <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-1.5">
           <div className="text-xs text-slate-400 font-medium">{t.cbam.scope1}</div>
           <div className="text-2xl font-extrabold font-mono text-emerald-400 tabular-nums">
-            {results.scope1Tco2e.toLocaleString('fr-TN')}{' '}
-            <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e</span>
+            {cbamResult.hasData ? (
+              <>
+                {cbamResult.corporateFootprint.scope1DirectTco2e.toLocaleString(numLocale)}{' '}
+                <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e</span>
+              </>
+            ) : (
+              <span className="text-slate-500">—</span>
+            )}
           </div>
           <div className="text-[11px] text-slate-400">Combustibles directs</div>
         </div>
@@ -232,20 +273,36 @@ export default function CbamPage() {
         <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-1.5">
           <div className="text-xs text-slate-400 font-medium">{t.cbam.scope2}</div>
           <div className="text-2xl font-extrabold font-mono text-amber-400 tabular-nums">
-            {results.scope2Tco2e.toLocaleString('fr-TN')}{' '}
-            <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e</span>
+            {cbamResult.hasData ? (
+              <>
+                {cbamResult.corporateFootprint.scope2IndirectTco2e.toLocaleString(numLocale)}{' '}
+                <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e</span>
+              </>
+            ) : (
+              <span className="text-slate-500">—</span>
+            )}
           </div>
-          <div className="text-[11px] text-slate-400">Réseau STEG (0.473 kg/kWh)</div>
+          <div className="text-[11px] text-slate-400">
+            Réseau STEG ({STEG_GRID_EF_KG_CO2E_PER_KWH} kg/kWh)
+          </div>
         </div>
 
         <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-1.5">
           <div className="text-xs text-slate-400 font-medium">{t.cbam.taxExposureTitle}</div>
           <div className="text-2xl font-extrabold font-mono text-white tabular-nums">
-            {results.cbamTaxExposureEur.toLocaleString('fr-TN')}{' '}
-            <span className="text-xs text-slate-400 font-sans font-normal">€</span>
+            {hasValidSee ? (
+              <>
+                {cbamResult.cbamScope.estimatedLiabilityEur.toLocaleString(numLocale)}{' '}
+                <span className="text-xs text-slate-400 font-sans font-normal">€</span>
+              </>
+            ) : (
+              <span className="text-slate-500">—</span>
+            )}
           </div>
           <div className="text-[11px] text-slate-400 font-mono">
-            ≈ {results.cbamTaxExposureTnd.toLocaleString('fr-TN')} TND (@ 85€/t)
+            {hasValidSee
+              ? `≈ ${cbamResult.cbamScope.estimatedLiabilityTnd.toLocaleString(numLocale)} TND (@ ${cbamResult.cbamScope.cbamCertificatePriceEur}€/t)`
+              : t.cockpit.emptyValue}
           </div>
         </div>
       </div>
@@ -254,15 +311,13 @@ export default function CbamPage() {
       <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-bold text-white">
-              Nomenclature des Matières Premières (Scope 3 BOM)
-            </h2>
+            <h2 className="text-sm font-bold text-white">{t.cbam.bomTitle}</h2>
             <p className="text-xs text-slate-400">
               Ajoutez les matières premières entrantes de votre usine pour intégrer leurs émissions incorporées.
             </p>
           </div>
           <div className="text-xs font-mono text-emerald-400">
-            Scope 3 Total : {results.scope3Tco2e.toLocaleString('fr-TN')} tCO₂e
+            Scope 3 Total : {cbamResult.corporateFootprint.scope3AllBomTco2e.toLocaleString(numLocale)} tCO₂e
           </div>
         </div>
 
@@ -336,6 +391,7 @@ export default function CbamPage() {
                     </td>
                     <td className="py-2.5 px-4 text-end">
                       <button
+                        type="button"
                         onClick={() => removeBomMaterial(m.id)}
                         className="text-slate-500 hover:text-red-400 p-1"
                       >
@@ -396,7 +452,7 @@ export default function CbamPage() {
                   <td className="py-2.5 px-4 font-mono text-blue-400">{ef.cn_code_8 || 'Énergie'}</td>
                   <td className="py-2.5 px-4 font-mono">Scope {ef.scope}</td>
                   <td className="py-2.5 px-4 font-mono font-bold">
-                    {ef.ef_kgco2e_per_unit.toLocaleString('fr-TN')} kgCO₂e/{ef.unit}
+                    {ef.ef_kgco2e_per_unit.toLocaleString(numLocale)} kgCO₂e/{ef.unit}
                   </td>
                   <td className="py-2.5 px-4 text-slate-400 text-[11px]">{ef.source_authority}</td>
                 </tr>
@@ -413,7 +469,7 @@ export default function CbamPage() {
         entries={pdfBomEntries}
         companyName={auditData.companyName || 'Entreprise'}
         quarter="T1 (Q1)"
-        reportingYear={new Date().getFullYear()}
+        reportingYear={cbamResult.cbamScope.reportingYear}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 // ==============================================================================
-// Industrial Responsive Sidebar (Clean Navigation, Zero Demo Artifacts)
+// Industrial Responsive Sidebar (Clean Navigation, Trilingual & RTL-safe)
 // ==============================================================================
 
 import React from 'react';
@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Zap,
   Globe2,
+  TrendingDown,
   Recycle,
   FileSearch,
   Database,
@@ -34,7 +35,7 @@ export function Sidebar() {
       active: pathname === '/',
     },
     {
-      name: locale === 'ar-TN' ? 'طاقة الستاغ' : 'Énergie STEG',
+      name: t.nav.energy,
       href: '/energy',
       icon: Zap,
       active: pathname.startsWith('/energy'),
@@ -42,7 +43,7 @@ export function Sidebar() {
       badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     },
     {
-      name: locale === 'ar-TN' ? 'مطابقة الكربون' : 'Conformité CBAM',
+      name: t.nav.cbam,
       href: '/cbam',
       icon: Globe2,
       active: pathname.startsWith('/cbam'),
@@ -50,7 +51,15 @@ export function Sidebar() {
       badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     },
     {
-      name: locale === 'ar-TN' ? 'مسح واستيراد الفواتير' : 'Import & Scanner',
+      name: t.nav.plan,
+      href: '/plan',
+      icon: TrendingDown,
+      active: pathname.startsWith('/plan'),
+      badge: 'MAC',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    },
+    {
+      name: t.nav.ocr,
       href: '/ocr',
       icon: FileSearch,
       active: pathname.startsWith('/ocr'),
@@ -69,13 +78,13 @@ export function Sidebar() {
           : 'bg-amber-500/10 text-amber-300 border-amber-500/25',
     },
     {
-      name: locale === 'ar-TN' ? 'بيانات المصنع' : 'Données Usine',
+      name: t.nav.audit,
       href: '/audit',
       icon: Database,
       active: pathname.startsWith('/audit'),
     },
     {
-      name: locale === 'ar-TN' ? 'النصوص التنظيمية' : 'Réglementation',
+      name: t.nav.blog,
       href: '/blog',
       icon: BookOpen,
       active: pathname.startsWith('/blog'),
@@ -85,10 +94,10 @@ export function Sidebar() {
   const hasCompanyName = auditData.companyName.trim().length > 0;
 
   return (
-    <aside className="hidden md:flex w-64 shrink-0 border-e border-white/[0.08] bg-[#080C14] flex-col justify-between py-5 px-3 transition-colors">
+    <aside className="hidden md:flex w-64 shrink-0 border-e border-white/[0.08] bg-[#080C14] flex-col justify-between py-5 px-3 transition-colors no-print">
       <div className="space-y-1">
         <div className="px-3 pb-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
-          <span>{locale === 'ar-TN' ? 'الوحدات' : 'Navigation'}</span>
+          <span>{locale === 'ar-TN' ? 'الوحدات' : locale === 'en' ? 'Modules' : 'Navigation'}</span>
           <span className="font-mono text-[9px] text-emerald-500 font-semibold">ISO 50001</span>
         </div>
 
@@ -104,16 +113,16 @@ export function Sidebar() {
                   : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
               }`}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <Icon
-                  className={`h-4 w-4 transition-colors ${
+                  className={`h-4 w-4 shrink-0 transition-colors ${
                     item.active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-200'
                   }`}
                 />
-                <span className="tracking-tight">{item.name}</span>
+                <span className="tracking-tight truncate">{item.name}</span>
               </div>
               {item.badge && (
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${item.badgeColor}`}>
+                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border shrink-0 ms-1.5 ${item.badgeColor}`}>
                   {item.badge}
                 </span>
               )}
@@ -126,19 +135,29 @@ export function Sidebar() {
       <div className="space-y-2.5 pt-4">
         <div className="rounded-xl border border-white/[0.08] bg-[#0D1322] p-3.5 space-y-2">
           <div className="flex items-center justify-between text-[10px] text-slate-400">
-            <span className="uppercase font-bold tracking-wider">Site Industriel</span>
+            <span className="uppercase font-bold tracking-wider">{t.nav.activeFacility}</span>
             <span className="font-mono text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded bg-white/[0.05] text-slate-300 border border-white/[0.08]">
               {subscriptionPlan === 'gold' ? 'Gold' : subscriptionPlan === 'pro' ? 'Pro' : 'Starter'}
             </span>
           </div>
 
           <div className="text-xs font-bold text-white line-clamp-1">
-            {hasCompanyName ? auditData.companyName : 'Usine non configurée'}
+            {hasCompanyName
+              ? auditData.companyName
+              : locale === 'ar-TN'
+              ? 'مصنع غير مهيأ بعد'
+              : locale === 'en'
+              ? 'Unconfigured facility'
+              : 'Usine non configurée'}
           </div>
 
           <div className="text-[11px] text-slate-400 truncate">
             {auditData.governorate || auditData.industrialZone
               ? `${auditData.governorate}${auditData.governorate && auditData.industrialZone ? ' • ' : ''}${auditData.industrialZone}`
+              : locale === 'ar-TN'
+              ? 'ملف المصنع في انتظار الإعداد'
+              : locale === 'en'
+              ? 'Facility profile pending'
               : 'Profil usine en attente'}
           </div>
 
@@ -148,14 +167,18 @@ export function Sidebar() {
               onClick={() => openAddDataModal('profile')}
               className="w-full text-start text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 pt-1"
             >
-              Configurer le profil →
+              {locale === 'ar-TN'
+                ? 'إعداد ملف المصنع ←'
+                : locale === 'en'
+                ? 'Configure profile →'
+                : 'Configurer le profil →'}
             </button>
           )}
         </div>
 
         <div className="px-3 py-2 rounded-lg bg-black/40 border border-white/[0.05] text-[10px] text-slate-400 flex items-center justify-between font-mono">
           <span>STEG: 0.473 kg/kWh</span>
-          <span>ETS: 85 €/t</span>
+          <span>ETS: {auditData.cbamCertificatePriceEur} €/t</span>
         </div>
       </div>
     </aside>

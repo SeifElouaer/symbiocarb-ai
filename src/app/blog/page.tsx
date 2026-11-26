@@ -63,20 +63,20 @@ const ARTICLES: RegulatoryArticle[] = [
     sourceUrl: 'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R0956',
     keyTakeaways: [
       'Plus de 70% des exportations industrielles tunisiennes (mécanique, aluminium, engrais, ciment) sont ciblées.',
-      'Depuis le 1er janvier 2025, l\'UE interdit les estimations forfaitaires : seules les données réelles vérifiées sont admises.',
-      'Les déclarants importateurs européens exigent le format officiel XML standardisé de la Commission Européenne.',
-      'Le prix des certificats CBAM sera aligné sur le cours hebdomadaire moyen du quota ETS (actuellement ~85 €/tCO₂e).'
+      'Depuis le 1er janvier 2026, le régime définitif s’applique : les données réelles vérifiées évitent les valeurs par défaut majorées.',
+      'La déclaration CBAM est déposée par l’importateur européen (déclarant autorisé), qui demande une communication des émissions fournisseur structurée (XML).',
+      'Le prix des certificats CBAM est indexé sur le cours EU ETS (publié trimestriellement en 2026 puis hebdomadairement dès 2027).'
     ],
     fullContent: {
-      context: 'Le Mécanisme d\'Ajustement Carbone aux Frontières (MACF / CBAM) a été instauré dans le cadre du Pacte Vert pour l\'Europe ("Fit for 55"). Son objectif est d\'égaliser le coût du carbone entre les industriels européens soumis au système ETS et les exportateurs des pays tiers comme la Tunisie.',
-      methodology: 'Les industriels tunisiens doivent déterminer les Émissions Spécifiques Incorporées (SEE - Specific Embedded Emissions) par tonne de produit fini (exprimées en tCO₂e / t). Le calcul doit dissocier les émissions directes (Scope 1 : combustion fossile, réactions chimiques) et les émissions indirectes (Scope 2 : électricité réseau STEG avec facteur certifié de 0.473 kgCO₂e/kWh).',
-      formula: 'SEE_{produit} = \\frac{AttrEm_{dir} + AttrEm_{indir}}{TotalProductionTonnes}',
-      industrialImpact: 'Sans calcul précis de vos émissions réelles, les douanes de l\'UE appliqueront les "Valeurs par Défaut du JRC" (les 10% les plus polluants de l\'UE majorés d\'une pénalité), imposant une surtaxe artificielle à vos clients européens et pénalisant vos contrats de sous-traitance.',
+      context: 'Le Mécanisme d\'Ajustement Carbone aux Frontières (MACF / CBAM) a été instauré dans le cadre du Pacte Vert pour l\'Europe ("Fit for 55"). Son objectif est d\'égaliser le coût du carbone entre les industriels européens soumis au système ETS et les importations provenant de pays tiers.',
+      methodology: 'Les industriels tunisiens doivent déterminer les Émissions Spécifiques Incorporées (SEE - Specific Embedded Emissions) par tonne de produit fini (exprimées en tCO₂e / t). Le calcul doit dissocier les émissions directes (Scope 1), les précurseurs CBAM pertinents et les émissions indirectes (électricité réseau STEG à 0.473 kgCO₂e/kWh, comptées uniquement pour le ciment et les engrais).',
+      formula: 'SEE_{produit} = \\frac{AttrEm_{dir} + AttrEm_{precurseurs} (+ AttrEm_{indir\\_secteurs\\_cibles})}{TotalProductionTonnes}',
+      industrialImpact: 'Sans données réelles vérifiées fournies par l’exportateur, l’importateur européen devra utiliser les valeurs par défaut UE majorées (10% en 2026, 20% en 2027, 30% en 2028+), augmentant la charge CBAM de vos clients.',
       checklist: [
-        'Identifier les codes douaniers SH à 8 chiffres de tous vos produits exportés vers l\'UE.',
+        'Identifier les codes douaniers NC / SH à 8 chiffres de tous vos produits exportés vers l\'UE.',
         'Mettre en place un comptage divisionnaire de l\'électricité STEG par ligne de production.',
         'Enregistrer les factures de matières premières avec leurs facteurs d\'émissions certifiés par les fournisseurs.',
-        'Générer le rapport trimestriel XML conforme au schéma XSD officiel de la Commission Européenne.'
+        'Générer le fichier XML de communication des émissions au client importateur UE pour vérification par un organisme accrédité.'
       ]
     }
   },
@@ -356,7 +356,7 @@ export default function BlogPage() {
                 {article.publishedDate}
               </span>
               <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-500 group-hover:translate-x-1 transition-transform">
-                <span>Lire l'analyse</span>
+                <span>Lire l&apos;analyse</span>
                 <ChevronRight className="h-3.5 w-3.5" />
               </span>
             </div>
@@ -417,7 +417,7 @@ export default function BlogPage() {
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
               <h2 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-emerald-400" />
-                <span>Points Clés pour l'Industrie</span>
+                <span>Points Clés pour l&apos;Industrie</span>
               </h2>
               <ul className="text-xs text-foreground/90 space-y-1.5 ps-1">
                 {activeArticle.keyTakeaways.map((point, i) => (
@@ -453,7 +453,7 @@ export default function BlogPage() {
 
               <div className="space-y-1.5">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  3. Impact Économique & Risques d'Audit
+                  3. Impact Économique &amp; Risques d&apos;Audit
                 </h2>
                 <p>{activeArticle.fullContent.industrialImpact}</p>
               </div>
@@ -476,7 +476,7 @@ export default function BlogPage() {
             {/* Modal Footer with External Source Link */}
             <div className="pt-4 border-t border-card-border flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-[11px] text-muted-foreground">
-                Document mis à jour selon les derniers décrets et textes de l'UE et de l'ANME.
+                Document mis à jour selon les derniers décrets et textes de l&apos;UE et de l&apos;ANME.
               </span>
               <a
                 href={activeArticle.sourceUrl}

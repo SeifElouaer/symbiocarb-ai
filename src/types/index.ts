@@ -223,15 +223,56 @@ export interface BioClairaSimulationResult {
   netAvoidedTco2e: number;
 }
 
+export interface CbamCorporateFootprint {
+  scope1DirectTco2e: number;
+  scope2IndirectTco2e: number;
+  scope3AllBomTco2e: number;
+  totalTco2e: number;
+  intensityTco2ePerTon: number;
+}
+
+export interface CbamRelevantScope {
+  sector: 'iron_steel' | 'aluminium' | 'cement' | 'fertilisers' | 'outside_scope';
+  isInCbamScope: boolean;
+  indirectEmissionsIncluded: boolean;
+  directEmissionsTco2e: number;
+  indirectEmissionsForInfoTco2e: number;
+  indirectEmissionsCountedTco2e: number;
+  cbamRelevantPrecursorsTco2e: number;
+  excludedBomTco2e: number;
+  totalCbamEmbeddedTco2e: number;
+  cbamSeeTco2ePerTon: number;
+  exportTonnes: number;
+  cbamEmbeddedForExportTco2e: number;
+  benchmarkTco2ePerTon: number;
+  reportingYear: number;
+  freeAllocationFactor: number;
+  freeAllocationDeductionTco2e: number;
+  carbonPricePaidAbroadEur: number;
+  carbonPricePaidAbroadEquivalentTco2e: number;
+  certificatesRequired: number;
+  cbamCertificatePriceEur: number;
+  eurToTndRate: number;
+  estimatedLiabilityEur: number;
+  estimatedLiabilityTnd: number;
+}
+
 export interface CbamCalculationResult {
   productName: string;
   cnCode8: string;
   finishedProductTons: number;
+  hasData: boolean;
+  hasProduction: boolean;
+  // Result A: Full corporate footprint (ISO 14064-1)
+  corporateFootprint: CbamCorporateFootprint;
+  // Result B: CBAM-relevant embedded emissions (Reg. EU 2023/956 definitive period 2026+)
+  cbamScope: CbamRelevantScope;
+  // Unified top-level accessors (aligned to A for corporate totals & B for CBAM SEE/liability)
   scope1DirectTco2e: number;
   scope2IndirectTco2e: number;
   scope3PrecursorsTco2e: number;
   totalEmbeddedTco2e: number;
-  specificEmbeddedEmissionsTco2ePerTon: number; // SEE
+  specificEmbeddedEmissionsTco2ePerTon: number; // CBAM-relevant SEE (Result B)
   euEtsCarbonPriceEur: number;
   estimatedCbamTaxLiabilityEur: number;
   estimatedCbamTaxLiabilityTnd: number;

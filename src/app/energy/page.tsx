@@ -11,6 +11,7 @@ import { useAudit } from '@/lib/audit/audit-context';
 import { solveCosPhiCompensation } from '@/lib/engine/cos-phi-solver';
 import { solveLoadShifting } from '@/lib/engine/load-shifting-lp';
 import { SectionHeader } from '@/components/layout/SectionHeader';
+import { formatSignedAmount } from '@/lib/format/signed-amount';
 import { Plus } from 'lucide-react';
 
 export default function EnergyPage() {
@@ -239,34 +240,59 @@ export default function EnergyPage() {
             />
           </div>
 
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-2">
-            <div className="text-xs text-emerald-300 font-semibold flex items-center justify-between">
-              <span>Économie STEG Brute :</span>
-              <span className="font-mono font-bold text-sm text-white">
-                +{loadShiftResult ? loadShiftResult.monthlyBillSavingsTnd.toLocaleString('fr-TN') : '0'} TND
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 border-t border-white/[0.06] pt-1.5 space-y-1">
-              <div className="flex justify-between">
-                <span>Surprime salariale nuit (+50%) :</span>
-                <span className="font-mono text-red-400">
-                  -{loadShiftResult ? loadShiftResult.additionalLaborNightCostTnd : 0} TND
-                </span>
+          {(() => {
+            const grossFormatted = formatSignedAmount(
+              loadShiftResult?.monthlyBillSavingsTnd,
+              'TND',
+              locale
+            );
+            const laborFormatted = formatSignedAmount(
+              loadShiftResult ? -Math.abs(loadShiftResult.additionalLaborNightCostTnd) : undefined,
+              'TND',
+              locale
+            );
+            const transportFormatted = formatSignedAmount(
+              loadShiftResult ? -Math.abs(loadShiftResult.nightTransportCostTnd) : undefined,
+              'TND',
+              locale
+            );
+            const netUnit = locale === 'ar-TN' ? 'د/شهر' : locale === 'en' ? 'TND/mo' : 'TND/mois';
+            const netFormatted = formatSignedAmount(
+              loadShiftResult?.netTrueMonthlyGainTnd,
+              netUnit,
+              locale
+            );
+            return (
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-2">
+                <div className="text-xs text-emerald-300 font-semibold flex items-center justify-between">
+                  <span>Économie STEG Brute :</span>
+                  <span className={`font-mono font-bold text-sm tabular-nums ${grossFormatted.colorClass}`}>
+                    {grossFormatted.text}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 border-t border-white/[0.06] pt-1.5 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Surprime salariale nuit (+50%) :</span>
+                    <span className={`font-mono tabular-nums ${laborFormatted.colorClass}`}>
+                      {laborFormatted.text}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Navettes ouvriers (nuit) :</span>
+                    <span className={`font-mono tabular-nums ${transportFormatted.colorClass}`}>
+                      {transportFormatted.text}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-xs border-t border-emerald-500/20 pt-1.5 font-bold flex items-center justify-between text-slate-200">
+                  <span>Gain Réel Net Entreprise :</span>
+                  <span className={`font-mono text-sm tabular-nums ${netFormatted.colorClass}`}>
+                    {netFormatted.text}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Navettes ouvriers (nuit) :</span>
-                <span className="font-mono text-red-400">
-                  -{loadShiftResult ? loadShiftResult.nightTransportCostTnd : 0} TND
-                </span>
-              </div>
-            </div>
-            <div className="text-xs border-t border-emerald-500/20 pt-1.5 font-bold flex items-center justify-between text-emerald-400">
-              <span>Gain Réel Net Entreprise :</span>
-              <span className="font-mono text-sm text-white">
-                +{loadShiftResult ? loadShiftResult.netTrueMonthlyGainTnd.toLocaleString('fr-TN') : '0'} TND/mois
-              </span>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
 

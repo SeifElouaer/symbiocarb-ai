@@ -6,31 +6,184 @@ export const fr = {
   // Brand & Global
   appName: 'SymbioCarb AI',
   tagline: 'Intelligence Carbone, Énergie STEG & Symbiose Industrielle pour l\'Industrie Tunisienne',
-  
+
+  // Navbar
+  navbar: {
+    subtitle: 'SaaS B2B Zéro-CAPEX • Conformité CBAM & Facture STEG',
+    regulationLink: 'Réglementation',
+    addData: 'Ajouter données',
+    signOut: 'Quitter',
+    signOutTitle: 'Se déconnecter',
+    signIn: 'Connexion',
+    signUp: 'Créer un compte',
+    workspaceLink: 'Espace de travail',
+  },
+
+  // Guest Mode
+  guest: {
+    badge: 'Mode invité : vos données restent sur cet appareil',
+    reset: 'Réinitialiser',
+    openModules: 'Accéder aux modules',
+  },
+
   // Navigation
   nav: {
     dashboard: 'Tableau de Bord',
     energy: 'Énergie STEG & Subventions',
     cbam: 'Conformité CBAM & ISO 14064',
+    plan: 'Plan d’Action & MAC',
     symbiosis: 'BioClaira (Pack Gold)',
     ocr: 'Import & Scanner Factures',
+    audit: 'Données Usine',
+    blog: 'Réglementation',
     copilot: 'DarjaBot Terrain',
     activeFacility: 'Usine Active',
+  },
+
+  // Public Landing Page
+  landing: {
+    heroBadge: 'Plateforme SaaS B2B Zéro-CAPEX • Industrie Exportatrice',
+    heroTitlePrefix: 'Conformité CBAM, Facture STEG &',
+    heroTitleHighlight: 'Revenus Circulaires',
+    heroDescriptionBefore: 'répond à cette urgence par une plateforme logicielle SaaS B2B',
+    heroDescriptionBold: 'zéro-CAPEX (sans installation matérielle)',
+    heroDescriptionAfter:
+      'qui automatise la conformité carbone CBAM, optimise mathématiquement la facture STEG et transforme les rejets industriels en revenus circulaires.',
+    ctaCreateAccount: 'Créer un compte entreprise',
+    ctaSignIn: 'Se connecter',
+    ctaOpenWorkspace: 'Tester en mode invité',
+    pillars: {
+      p1Label: '01 / Zéro-CAPEX',
+      p1Title: 'Sans installation matérielle',
+      p1Desc:
+        'Exploitation directe de vos factures officielles STEG et relevés de production, par scan OCR ou saisie guidée.',
+      p2Label: '02 / Optimisation STEG',
+      p2Title: 'Calcul mathématique exact',
+      p2Desc:
+        'Analyse des 4 tranches horaires, effacement de pointe et dimensionnement du facteur de puissance cos φ.',
+      p3Label: '03 / Conformité CBAM UE',
+      p3Title: 'Données vérifiables pour importateur UE',
+      p3Desc:
+        'Calcul du SEE spécifique CBAM (période définitive 2026+) et export XML de communication des émissions au client importateur UE.',
+    },
+    regulatory: {
+      eyebrow: 'Cadre Réglementaire & Normes',
+      title: 'Conformité Légale et Référentiels Techniques',
+      linkText: 'Consulter le centre réglementaire',
+      card1Badge: 'CBAM UE 2023/956',
+      card1Tag: 'Export UE',
+      card1Title: 'Mécanisme d’Ajustement Carbone aux Frontières',
+      card1Desc:
+        'Calcul des Émissions Spécifiques Incorporées (SEE) réelles par code CN à 8 chiffres et communication des émissions au client importateur UE (XML).',
+      card2Badge: 'ISO 14064-1:2018',
+      card2Tag: 'Bilan GES',
+      card2Title: 'Inventaire Gaz à Effet de Serre & Réseau STEG',
+      card2Desc:
+        'Comptabilisation structurée des Scopes 1, 2 et 3 intégrant le facteur d’émission officiel du réseau électrique tunisien.',
+      card3Badge: 'STEG MT & ANME FTE',
+      card3Tag: 'ISO 50001',
+      card3Title: 'Tarification Moyenne Tension & Subventions FTE 70%',
+      card3Desc:
+        'Élimination des pénalités réactives (cos φ < 0.85), maîtrise de la puissance appelée et mobilisation du Fonds de Transition Énergétique.',
+    },
+    about: {
+      eyebrow: 'À Propos de Notre Startup',
+      title: 'L’ingénierie industrielle tunisienne au service de la compétitivité export',
+      intro:
+        'SymbioCarb AI est une startup DeepTech B2B fondée par des ingénieurs en efficacité énergétique, génie des procédés et architecture logicielle.',
+      missionTitle: 'Notre Mission',
+      missionDesc:
+        'Protéger les marges des usines tunisiennes face à la hausse des coûts électriques et aux nouvelles obligations carbone européennes (CBAM), sans nécessiter de cabinets de conseil longs ou coûteux.',
+      zeroCapexTitle: 'Approche Zéro-CAPEX',
+      zeroCapexDesc:
+        'Aucun capteur IoT à acheter ni arrêt de production : vous importez vos documents officiels existants et nos modèles déterministes calculent immédiatement vos leviers d’économie.',
+      mathTitle: 'Rigueur Mathématique',
+      mathDesc:
+        'Toutes nos équations énergétiques et bilans carbone suivent strictement les arrêtés STEG, le Règlement UE 2023/956 et les référentiels ISO 14064-1 / 50001.',
+      bioclairaTitle: 'Option Circulaire BioClaira',
+      bioclairaDesc:
+        'Pour les sites générant des sous-produits ou déchets valorisables, notre module avancé BioClaira transforme ces rejets en nouvelles sources de revenus circulaires.',
+    },
+    pricing: {
+      eyebrow: 'Offres d’Abonnement B2B',
+      title: 'Des Forfaits Adaptés à Chaque Maturité Industrielle',
+      subtitle:
+        'Commencez par l’optimisation énergétique et la conformité CBAM, puis activez l’audit séparé des déchets BioClaira avec le Pack Gold.',
+      monthly: 'Mensuel',
+      annual: 'Annuel',
+      discountBadge: '-20%',
+      perMonth: '/ mois',
+      starterTitle: 'Pack Starter PME',
+      starterDesc: 'Diagnostic énergétique STEG et suivi mensuel',
+      starterFeatures: [
+        'Analyse des 4 tranches horaires STEG MT',
+        'Calcul batterie de condensateurs cos φ',
+        'Import CSV historique & suivi mensuel',
+      ],
+      starterCta: 'Créer un compte',
+      proBadge: 'Recommandé Exportateurs',
+      proTitle: 'Pack Exportateur Pro',
+      proDesc: 'Conformité CBAM complète & optimisation STEG',
+      proFeatures: [
+        'Tout le Pack Starter PME inclus',
+        'Bilan Carbone Scope 1, 2 & 3 (BOM)',
+        'Communication des émissions au client importateur UE (XML)',
+        'Scanner OCR des factures STEG (PDF / photo)',
+      ],
+      proCta: 'Démarrer avec Exportateur Pro',
+      goldBadge: 'Option Circulaire',
+      goldTitle: 'Pack Gold + BioClaira',
+      goldDesc: 'Conformité complète + audit séparé et valorisation des rejets',
+      goldFeatures: [
+        'Tout le Pack Exportateur Pro inclus',
+        'Module BioClaira : audit séparé de vos déchets industriels',
+        'Propositions de recyclage, valorisation & revenus circulaires',
+        'Intégration du plan d’actions et de la courbe d’abattement',
+      ],
+      goldCta: 'Choisir le Pack Gold',
+    },
+    finalCta: {
+      title: 'Initialisez l’espace de votre usine dès aujourd’hui',
+      subtitle:
+        'Créez votre compte, importez votre première facture STEG ou démarrez à zéro pour suivre vos consommations et votre conformité au fur et à mesure.',
+      button: 'Créer un compte entreprise',
+    },
   },
 
   // Dashboard Cockpit
   cockpit: {
     title: 'Cockpit Industriel & Décarbonation',
+    defaultFacilityTitle: 'Tableau de Bord Usine',
+    defaultFacilitySubtitle:
+      'Supervision STEG MT, conformité carbone CBAM et saisie progressive des données.',
+    readinessLabel: 'Conformité',
+    addDataBtn: 'Ajouter des données / Facture',
+    scanDocBtn: 'Scanner un document',
+    zeroStateTitle: 'Votre usine démarre à zéro — prêt pour vos données réelles',
+    zeroStateDesc:
+      'Aucune donnée fictive n’est injectée. Importez une facture STEG (PDF, photo ou CSV) ou saisissez vos consommations manuellement pour calculer vos pourcentages énergétiques et votre exposition CBAM.',
+    zeroStateBillBtn: 'Saisir une facture',
+    zeroStateProfileBtn: 'Profil usine',
     subtitle: 'Vue d\'ensemble temps réel des flux énergétiques, carbone et opportunités de valorisation circulaire',
-    kpiCarbonFootprint: 'Empreinte Carbone Totale',
+    kpiCarbonFootprint: 'Empreinte Carbone (ISO 14064-1)',
     kpiStegBill: 'Facture STEG Mensuelle',
+    kpiCosPhiSavings: 'Économies STEG / cos φ',
     kpiSymbiosisRevenue: 'Gains Symbiose Circulaire',
-    kpiCbamLiability: 'Exposition Taxe CBAM UE',
-    unitTco2e: 'tCO₂e / an',
+    kpiCbamLiability: 'Exposition CBAM UE (Scope B)',
+    unitTco2e: 'tCO₂e/an',
     unitTnd: 'TND',
-    unitTndYear: 'TND / an',
+    unitTndMonth: 'TND/mois',
+    unitTndYear: 'TND/an',
+    unitEurYear: '€ / an',
     unitEur: '€',
-    
+    emptyValue: 'Aucune donnée',
+    actionPlanCardTitle: 'Plan d’action décarbonation',
+    actionPlanEmpty: 'Ajoutez vos factures STEG ou intrants pour générer la courbe MAC.',
+    actionPlanSummaryPrefix: 'Plan d’action :',
+    actionPlanAvoidable: 'tCO₂e/an évitables',
+    actionPlanNetPerYear: 'TND/an net',
+    openActionPlan: 'Ouvrir le plan d’action',
+
     // Quick alerts
     alertPointeTitle: 'Alerte Dépassement Tarif Pointe STEG',
     alertPointeMsg: 'Tarif de pointe actif (0.412 TND/kWh). Déclenchez l\'effacement de 45 kW pour économiser 140 TND ce soir.',
@@ -38,10 +191,30 @@ export const fr = {
     alertCosPhiMsg: '3,845 TND de pénalités ce mois. L\'installation d\'une batterie de 150 kVAR est amortie en 4.2 mois.',
     alertSymbiosisTitle: 'Nouvelle Synergie Détectée',
     alertSymbiosisMsg: 'Un acheteur à Sfax Thyna recherche 180t de charbon actif pour traitement d\'eau.',
-    
-    // Charts
-    chartLoadTitle: 'Courbe de Charge STEG Moyenne Tension (kWh par poste)',
+
+    // Charts & Modules
+    chartLoadTitle: 'Répartition des consommations par tranche tarifaire STEG',
+    chartLoadSubtitle: 'Pourcentages calculés directement sur vos relevés saisis ou scannés',
     chartSankeyTitle: 'Diagramme de Flux Matière & Énergie (Sankey Circulaire)',
+    noKwhTitle: '0 kWh enregistrés',
+    noKwhDesc: 'Ajoutez votre première facture STEG ou importez un historique CSV pour visualiser la répartition horaire.',
+    addBillShort: '+ Ajouter une facture',
+    modulesTitle: 'Modules d’Analyse',
+    modulesTag: 'Calculs Réels',
+    moduleEnergyTitle: 'Optimisation STEG & cos φ',
+    moduleEnergyDesc: 'Condensateurs, effacement de pointe & ANME',
+    moduleCbamTitle: 'Conformité CBAM & Export XML',
+    moduleCbamDesc: 'Communication des émissions au client importateur UE',
+    modulePlanTitle: 'Plan d’Action & Courbe MAC',
+    modulePlanDesc: 'Coût marginal d’abattement & ROI des leviers',
+    moduleOcrTitle: 'Import & Scanner Document AI',
+    moduleOcrDesc: 'Lecture automatique des factures PDF / photo',
+    bioclairaTitle: 'BioClaira — Audit Déchets',
+    bioclairaOpen: 'Ouvrir l’audit séparé BioClaira',
+    billsHistoryTitle: 'Historique des relevés STEG enregistrés',
+    billsCountSuffix: 'période(s) enregistrée(s)',
+    addPeriodBtn: '+ Ajouter une période',
+    noBillsMsg: 'Aucune facture mensuelle enregistrée pour le moment.',
   },
 
   // Energy & STEG Module
@@ -74,19 +247,51 @@ export const fr = {
 
   // CBAM Module
   cbam: {
-    title: 'Passeport Carbone & Conformité CBAM UE (MACF)',
-    subtitle: 'Calcul déterministe des émissions spécifiques incorporées (SEE) selon le Règlement (UE) 2023/956',
-    seeTitle: 'Émissions Spécifiques Incorporées (SEE)',
+    title: 'Passeport Carbone & Communication CBAM UE',
+    subtitle: 'Calcul déterministe des émissions spécifiques incorporées (SEE) selon le Règlement (UE) 2023/956 (période définitive 2026+)',
+    seeTitle: 'SEE CBAM (Scope B)',
     benchmarkComparison: 'Écart au Benchmark Européen',
-    taxExposureTitle: 'Exposition Fiscale Prévisionnelle CBAM',
+    taxExposureTitle: 'Exposition CBAM Estimée (Importateur UE)',
     scope1: 'Scope 1 (Émissions directes procédé)',
     scope2: 'Scope 2 (Électricité réseau STEG)',
     scope3: 'Scope 3 (Précurseurs métalliques & intrants)',
     bomTitle: 'Nomenclature Industrielle & Facteurs d\'Émission (BOM)',
     uploadBom: 'Importer une Nomenclature (Excel/CSV)',
     ragStatus: 'Vector RAG sémantique (768 dimensions) actif',
-    exportXml: 'Télécharger Déclaration CBAM (XML Officiel UE)',
+    exportXml: 'Communication des émissions au client importateur UE (XML)',
+    exportXmlShort: 'Exporter Communication XML',
     exportPdf: 'Télécharger Rapport d\'Audit ISO 14064-1 (PDF)',
+    missingXmlHint: 'Complétez : nom de l’entreprise, code CN (>= 4 chiffres), tonnage produit (> 0) et au moins une source d’émissions.',
+    resultATitle: 'A. Bilan Carbone Complet (ISO 14064-1)',
+    resultASubtitle: 'Toutes émissions Scope 1 + Scope 2 + tous les intrants Scope 3',
+    resultBTitle: 'B. Émissions Incorporées CBAM (Règlement UE 2023/956)',
+    resultBSubtitle: 'Périmètre strict applicable au produit exporté vers l’UE',
+    outsideScopeTitle: 'Code CN hors périmètre CBAM actuel',
+    outsideScopeDesc: 'Ce code douanier ne relève pas des secteurs couverts par l’Annexe I du CBAM (acier/fer 72-73, aluminium 76, ciment 2523, engrais 31/2808/2814/2834).',
+    indirectIncludedYes: 'Émissions indirectes (électricité) incluses dans le CBAM pour ce secteur (ciment / engrais).',
+    indirectIncludedNo: 'Émissions indirectes (électricité) exclues du périmètre CBAM pour l’acier et l’aluminium (indiquées pour information).',
+    reportingYearLabel: 'Année de déclaration',
+    certPriceLabel: 'Prix indicatif certificat CBAM (€/t)',
+    certPriceHint: 'Prix indicatif indexé EU ETS ; le prix officiel des certificats CBAM est publié trimestriellement en 2026 puis hebdomadairement à partir de 2027.',
+    clientTonnageLabel: 'Tonnage annuel CBAM importé par votre principal client UE (tous fournisseurs)',
+    deMinimisWarning: 'Votre client pourrait être exempté du CBAM (seuil de masse unique de 50 t/an pour fer & acier, aluminium, ciment et engrais). Des données réelles restent toutefois essentielles pour les appels d’offres européens et les futures extensions du mécanisme.',
+    phaseInChartTitle: 'Projection de l’exposition CBAM 2026–2034 (sortie des quotas gratuits)',
+    timelineTitle: 'Calendrier réglementaire CBAM (période définitive)',
+    timelineFacts: [
+      'Le régime définitif s’applique depuis le 1er janvier 2026.',
+      'La vente des certificats CBAM débute le 1er février 2027 ; la première déclaration annuelle (importations 2026) est due au plus tard le 30 septembre 2027.',
+      'La déclaration CBAM et le paiement incombent à l’importateur européen (déclarant CBAM autorisé) ; l’exportateur tunisien fournit les données d’installation vérifiées.',
+    ],
+    defaultComparatorTitle: 'Comparateur : Valeurs par défaut UE vs Vos données réelles vérifiées',
+    defaultInputLabel: 'Valeur par défaut UE (tCO₂e/t)',
+    defaultInputPlaceholder: 'Saisir la valeur par défaut UE (tCO₂e/t)',
+    defaultColTitle: 'Avec les valeurs par défaut UE',
+    actualColTitle: 'Avec vos données réelles vérifiées',
+    defaultMissingNotice: 'Aucune valeur par défaut pré-remplie pour ce code CN. Saisissez manuellement la valeur par défaut UE (tCO₂e/t) publiée pour comparer.',
+    defaultWorseNotice: 'Votre SEE réel dépasse actuellement la valeur par défaut majorée. Priorisez les leviers du Plan d’Action pour réduire vos coûts.',
+    copyClientPitch: 'Copier la phrase pour votre client UE',
+    copied: 'Copié !',
+    cbamPrecursorBadge: 'CBAM',
   },
 
   // Symbiosis & BioClaira Module
@@ -116,7 +321,7 @@ export const fr = {
   // Document AI / OCR Module
   ocr: {
     title: 'Document AI : Factures STEG & Nomenclatures',
-    subtitle: 'Extraction multimodale instantanée via Gemini 2.5 Flash Vision avec vérification interactive',
+    subtitle: 'Extraction multimodale instantanée via Gemini Flash Vision avec vérification interactive',
     dropzoneTitle: 'Glissez-déposez une facture STEG (PDF ou photo smartphone)',
     dropzoneDesc: 'Compatible MT Postes Horaires, MT Uniforme et bordereaux SONEDE',
     sampleButton: 'Charger un échantillon de facture STEG MT',
@@ -141,4 +346,3 @@ export const fr = {
     preset3: '🌿 Valorisation Noyaux (تثمين نوى التمور)',
   },
 };
-

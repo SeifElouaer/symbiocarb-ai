@@ -1,7 +1,7 @@
 'use client';
 
 // ==============================================================================
-// Global Industrial Navbar (Restrained Obsidian Design)
+// Global Industrial Navbar (Restrained Obsidian Design, Trilingual & RTL-safe)
 // ==============================================================================
 
 import React from 'react';
@@ -12,12 +12,12 @@ import { useAudit } from '@/lib/audit/audit-context';
 import { LogOut, Plus } from 'lucide-react';
 
 export function Navbar() {
-  const { locale, setLocale } = useTranslation();
+  const { locale, setLocale, t } = useTranslation();
   const { user, isAuthenticated, openAuthModal, signOut } = useAuth();
   const { openAddDataModal } = useAudit();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#080C14]/90 backdrop-blur-xl transition-all">
+    <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#080C14]/90 backdrop-blur-xl transition-all no-print">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         {/* Brand Wordmark */}
         <Link href="/" className="flex items-center gap-3 group">
@@ -35,25 +35,33 @@ export function Navbar() {
               </span>
             </div>
             <p className="text-[11px] text-slate-400 hidden sm:block tracking-tight">
-              {locale === 'ar-TN'
-                ? 'منظومة الذكاء الكربوني والتعريفة الطاقية للصناعة التونسية'
-                : 'SaaS B2B Zéro-CAPEX • Conformité CBAM & Facture STEG'}
+              {t.navbar.subtitle}
             </p>
           </div>
         </Link>
 
         {/* Right Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {!isAuthenticated && (
+            <Link
+              href="/cbam"
+              className="hidden md:inline-flex items-center rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+            >
+              {t.navbar.workspaceLink}
+            </Link>
+          )}
+
           <Link
             href="/blog"
             className="hidden lg:inline-flex items-center rounded-lg border border-white/[0.08] bg-[#0E1526]/80 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-white/20 hover:text-white transition-colors"
           >
-            Réglementation
+            {t.navbar.regulationLink}
           </Link>
 
           {/* Language Switcher */}
           <div className="flex items-center rounded-lg border border-white/[0.08] bg-[#0E1526]/80 p-0.5">
             <button
+              type="button"
               onClick={() => setLocale('fr')}
               className={`rounded px-2 py-1 text-xs font-medium transition-all ${
                 locale === 'fr'
@@ -64,6 +72,7 @@ export function Navbar() {
               FR
             </button>
             <button
+              type="button"
               onClick={() => setLocale('en')}
               className={`rounded px-2 py-1 text-xs font-medium transition-all ${
                 locale === 'en'
@@ -74,6 +83,7 @@ export function Navbar() {
               EN
             </button>
             <button
+              type="button"
               onClick={() => setLocale('ar-TN')}
               className={`rounded px-2 py-1 text-xs font-medium font-arabic transition-all ${
                 locale === 'ar-TN'
@@ -89,11 +99,12 @@ export function Navbar() {
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => openAddDataModal('steg')}
                 className="btn-tactile hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-1.5 text-xs font-bold transition-all"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Ajouter données</span>
+                <span>{t.navbar.addData}</span>
               </button>
 
               <div className="hidden md:flex flex-col text-end ps-1">
@@ -106,27 +117,30 @@ export function Navbar() {
               </div>
 
               <button
+                type="button"
                 onClick={signOut}
-                title="Se déconnecter"
+                title={t.navbar.signOutTitle}
                 className="btn-tactile flex items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/[0.08] transition-all"
               >
-                <LogOut className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Quitter</span>
+                <LogOut className="h-3.5 w-3.5 rtl:rotate-180" />
+                <span className="hidden sm:inline">{t.navbar.signOut}</span>
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => openAuthModal('signin')}
                 className="hidden sm:inline-flex rounded-lg border border-white/[0.1] px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/[0.05] transition-colors"
               >
-                Connexion
+                {t.navbar.signIn}
               </button>
               <button
+                type="button"
                 onClick={() => openAuthModal('signup')}
                 className="btn-tactile rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black px-3.5 py-1.5 text-xs font-bold transition-all"
               >
-                Créer un compte
+                {t.navbar.signUp}
               </button>
             </div>
           )}

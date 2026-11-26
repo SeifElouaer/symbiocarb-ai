@@ -2,12 +2,14 @@
 
 // ==============================================================================
 // SymbioCarb AI - Public Landing Page & Authenticated Industrial Cockpit
+// Fully trilingual (FR / EN / AR-TN) with RTL mirroring and strict zero-state.
 // ==============================================================================
 
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAudit } from '@/lib/audit/audit-context';
+import { useTranslation } from '@/lib/i18n/use-translation';
 import {
   ArrowRight,
   Plus,
@@ -30,18 +32,26 @@ import {
 export default function HomePage() {
   const { isAuthenticated, openAuthModal, subscriptionPlan } = useAuth();
   const { auditData, results, openAddDataModal, removeMonthlyBill } = useAudit();
+  const { t, locale } = useTranslation();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+
+  const numLocale = locale === 'en' ? 'en-US' : 'fr-TN';
 
   // ============================================================================
   // AUTHENTICATED VIEW: REAL-DATA INDUSTRIAL COCKPIT (ZERO-STATE SAFE)
   // ============================================================================
   if (isAuthenticated) {
     const loadData = [
-      { name: 'Jour', kWh: auditData.kwhJour, pct: results.pctJour, fill: '#10B981' },
-      { name: 'Pointe', kWh: auditData.kwhPointe, pct: results.pctPointe, fill: '#EF4444' },
-      { name: 'Soir', kWh: auditData.kwhSoir, pct: results.pctSoir, fill: '#F59E0B' },
-      { name: 'Nuit', kWh: auditData.kwhNuit, pct: results.pctNuit, fill: '#3B82F6' },
+      { name: t.energy.jour.split(' ')[0], kWh: auditData.kwhJour, pct: results.pctJour, fill: '#10B981' },
+      { name: t.energy.pointe.split(' ')[0], kWh: auditData.kwhPointe, pct: results.pctPointe, fill: '#EF4444' },
+      { name: t.energy.soir.split(' ')[0], kWh: auditData.kwhSoir, pct: results.pctSoir, fill: '#F59E0B' },
+      { name: t.energy.nuit.split(' ')[0], kWh: auditData.kwhNuit, pct: results.pctNuit, fill: '#3B82F6' },
     ];
+
+    const hasCbamValuation =
+      results.cbam.hasData &&
+      results.cbam.hasProduction &&
+      results.cbam.cbamScope.isInCbamScope;
 
     return (
       <div className="space-y-6">
@@ -50,33 +60,34 @@ export default function HomePage() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                {auditData.companyName.trim() || 'Tableau de Bord Usine'}
+                {auditData.companyName.trim() || t.cockpit.defaultFacilityTitle}
               </h1>
               <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Conformité : {results.readinessScorePercent}%
+                {t.cockpit.readinessLabel} : {results.readinessScorePercent}%
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
               {auditData.governorate || auditData.industrialZone
                 ? `${auditData.governorate}${auditData.governorate && auditData.industrialZone ? ' — ' : ''}${auditData.industrialZone}`
-                : 'Supervision STEG MT, conformité carbone CBAM et saisie progressive des données.'}
+                : t.cockpit.defaultFacilitySubtitle}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
+              type="button"
               onClick={() => openAddDataModal('steg')}
               className="btn-tactile inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Ajouter des données / Facture</span>
+              <span>{t.cockpit.addDataBtn}</span>
             </button>
             <Link
               href="/ocr"
               className="btn-tactile inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 text-xs font-semibold border border-white/[0.08] transition-all"
             >
               <Upload className="h-3.5 w-3.5" />
-              <span>Scanner un document</span>
+              <span>{t.cockpit.scanDocBtn}</span>
             </Link>
           </div>
         </div>
@@ -85,95 +96,129 @@ export default function HomePage() {
         {!results.hasAnyData && (
           <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-sm font-bold text-white">
-                Votre usine démarre à zéro — prêt pour vos données réelles
-              </h2>
+              <h2 className="text-sm font-bold text-white">{t.cockpit.zeroStateTitle}</h2>
               <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
-                Aucune donnée fictive n&apos;est injectée. Importez une facture STEG (PDF, photo ou CSV) ou saisissez vos consommations manuellement pour calculer vos pourcentages énergétiques et votre exposition CBAM.
+                {t.cockpit.zeroStateDesc}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
+                type="button"
                 onClick={() => openAddDataModal('steg')}
                 className="btn-tactile px-4 py-2 rounded-xl bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400"
               >
-                Saisir une facture
+                {t.cockpit.zeroStateBillBtn}
               </button>
               <button
+                type="button"
                 onClick={() => openAddDataModal('profile')}
                 className="px-4 py-2 rounded-xl border border-white/[0.12] text-xs font-semibold text-slate-200 hover:bg-white/[0.05]"
               >
-                Profil usine
+                {t.cockpit.zeroStateProfileBtn}
               </button>
             </div>
           </div>
         )}
 
-        {/* 4 Core KPIs (Always strict real data or 0) */}
+        {/* 4 Core KPIs (Always strict real data or clean empty state) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* KPI 1: Carbon Footprint */}
+          {/* KPI 1: Corporate Carbon Footprint (Result A) */}
           <div className="rounded-2xl glass-panel-elevated p-5 border border-white/[0.08]">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-              <span className="font-medium">Empreinte Carbone</span>
+              <span className="font-medium">{t.cockpit.kpiCarbonFootprint}</span>
               <span className="text-[10px] font-mono uppercase">Scope 1+2+3</span>
             </div>
             <div className="text-3xl font-extrabold text-white font-mono tracking-tight tabular-nums">
-              {results.totalTco2e.toLocaleString('fr-TN')}{' '}
-              <span className="text-xs font-normal text-slate-400">tCO₂e/an</span>
+              {results.hasCarbonData ? (
+                <>
+                  {results.totalTco2e.toLocaleString(numLocale)}{' '}
+                  <span className="text-xs font-normal text-slate-400">{t.cockpit.unitTco2e}</span>
+                </>
+              ) : (
+                <span className="text-slate-500">—</span>
+              )}
             </div>
             <div className="text-[11px] text-slate-400 mt-2.5 font-mono">
-              SEE : {results.specificEmbeddedEmissionsTco2ePerTon} tCO₂e/t
+              {results.cbam.hasProduction
+                ? `ISO: ${results.cbam.corporateFootprint.intensityTco2ePerTon} tCO₂e/t`
+                : t.cockpit.emptyValue}
             </div>
           </div>
 
           {/* KPI 2: STEG Bill */}
           <div className="rounded-2xl glass-panel-elevated p-5 border border-white/[0.08]">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-              <span className="font-medium">Facture STEG Mensuelle</span>
+              <span className="font-medium">{t.cockpit.kpiStegBill}</span>
               <span className="text-[10px] font-mono text-amber-400 uppercase font-semibold">
                 Pointe 0.412
               </span>
             </div>
             <div className="text-3xl font-extrabold text-white font-mono tracking-tight tabular-nums">
-              {results.estimatedMonthlyStegTnd.toLocaleString('fr-TN')}{' '}
-              <span className="text-xs font-normal text-slate-400">TND/mois</span>
+              {results.hasEnergyData ? (
+                <>
+                  {results.estimatedMonthlyStegTnd.toLocaleString(numLocale)}{' '}
+                  <span className="text-xs font-normal text-slate-400">{t.cockpit.unitTndMonth}</span>
+                </>
+              ) : (
+                <span className="text-slate-500">—</span>
+              )}
             </div>
             <div className="text-[11px] text-amber-400 font-mono mt-2.5">
-              Part Pointe : {results.pctPointe}% ({results.kwhTotal.toLocaleString('fr-TN')} kWh)
+              {results.hasEnergyData
+                ? `${results.pctPointe}% Pointe (${results.kwhTotal.toLocaleString(numLocale)} kWh)`
+                : t.cockpit.emptyValue}
             </div>
           </div>
 
           {/* KPI 3: Reactive & Cos Phi */}
           <div className="rounded-2xl glass-panel-elevated p-5 border border-white/[0.08]">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-              <span className="font-medium">Économies STEG / cos φ</span>
+              <span className="font-medium">{t.cockpit.kpiCosPhiSavings}</span>
               <span className="text-[10px] font-mono uppercase text-slate-300">
-                cos φ : {results.cosPhiCurrent > 0 ? results.cosPhiCurrent : '0.00'}
+                cos φ : {results.cosPhiCurrent > 0 ? results.cosPhiCurrent : '—'}
               </span>
             </div>
             <div className="text-3xl font-extrabold text-emerald-400 font-mono tracking-tight tabular-nums">
-              {results.totalAnnualStegSavingsTnd.toLocaleString('fr-TN')}{' '}
-              <span className="text-xs font-normal text-slate-400">TND/an</span>
+              {results.hasEnergyData ? (
+                <>
+                  {results.totalAnnualStegSavingsTnd.toLocaleString(numLocale)}{' '}
+                  <span className="text-xs font-normal text-slate-400">{t.cockpit.unitTndYear}</span>
+                </>
+              ) : (
+                <span className="text-slate-500">—</span>
+              )}
             </div>
             <div className="text-[11px] text-slate-400 mt-2.5 font-mono">
-              Condensateur requis : {results.requiredCapacitorKvar} kVAR
+              {results.hasEnergyData
+                ? `${results.requiredCapacitorKvar} kVAR`
+                : t.cockpit.emptyValue}
             </div>
           </div>
 
-          {/* KPI 4: CBAM Tax Exposure */}
+          {/* KPI 4: CBAM Tax Exposure (Result B - Single Source of Truth) */}
           <div className="rounded-2xl glass-panel-elevated p-5 border border-white/[0.08]">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-              <span className="font-medium">Exposition CBAM UE</span>
+              <span className="font-medium">{t.cockpit.kpiCbamLiability}</span>
               <span className="text-[10px] font-mono text-blue-400 uppercase font-semibold">
-                ETS 85 €/t
+                {results.cbam.cbamScope.reportingYear} · {results.cbam.cbamScope.cbamCertificatePriceEur} €/t
               </span>
             </div>
             <div className="text-3xl font-extrabold text-white font-mono tracking-tight tabular-nums">
-              {results.cbamTaxExposureEur.toLocaleString('fr-TN')}{' '}
-              <span className="text-xs font-normal text-slate-400">€ / an</span>
+              {hasCbamValuation ? (
+                <>
+                  {results.cbamTaxExposureEur.toLocaleString(numLocale)}{' '}
+                  <span className="text-xs font-normal text-slate-400">{t.cockpit.unitEurYear}</span>
+                </>
+              ) : (
+                <span className="text-slate-500">—</span>
+              )}
             </div>
             <div className="text-[11px] text-slate-400 mt-2.5 font-mono">
-              Équivalent : {results.cbamTaxExposureTnd.toLocaleString('fr-TN')} TND
+              {hasCbamValuation
+                ? `≈ ${results.cbamTaxExposureTnd.toLocaleString(numLocale)} TND (SEE ${results.specificEmbeddedEmissionsTco2ePerTon} tCO₂e/t)`
+                : results.cbam.hasProduction && !results.cbam.cbamScope.isInCbamScope
+                ? t.cbam.outsideScopeTitle
+                : t.cockpit.emptyValue}
             </div>
           </div>
         </div>
@@ -184,18 +229,16 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h2 className="text-sm font-bold text-white tracking-tight">
-                  Répartition des consommations par tranche tarifaire STEG
+                  {t.cockpit.chartLoadTitle}
                 </h2>
-                <p className="text-xs text-slate-400">
-                  Pourcentages calculés directement sur vos relevés saisis ou scannés
-                </p>
+                <p className="text-xs text-slate-400">{t.cockpit.chartLoadSubtitle}</p>
               </div>
               <div className="flex items-center gap-2 text-[11px] font-mono text-slate-300">
-                <span>Jour {results.pctJour}%</span>
+                <span>{results.pctJour}%</span>
                 <span className="text-slate-600">·</span>
-                <span className="text-red-400">Pointe {results.pctPointe}%</span>
+                <span className="text-red-400">{results.pctPointe}% Pointe</span>
                 <span className="text-slate-600">·</span>
-                <span>Nuit {results.pctNuit}%</span>
+                <span>{results.pctNuit}%</span>
               </div>
             </div>
 
@@ -225,15 +268,14 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="h-64 w-full rounded-xl border border-dashed border-white/[0.1] bg-black/20 flex flex-col items-center justify-center text-center p-6 space-y-2">
-                <div className="text-sm font-semibold text-slate-300 font-mono">0 kWh enregistrés</div>
-                <p className="text-xs text-slate-500 max-w-sm">
-                  Ajoutez votre première facture STEG ou importez un historique CSV pour visualiser la répartition horaire.
-                </p>
+                <div className="text-sm font-semibold text-slate-300 font-mono">{t.cockpit.noKwhTitle}</div>
+                <p className="text-xs text-slate-500 max-w-sm">{t.cockpit.noKwhDesc}</p>
                 <button
+                  type="button"
                   onClick={() => openAddDataModal('steg')}
                   className="mt-2 px-3.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs font-semibold text-emerald-400 border border-white/[0.08]"
                 >
-                  + Ajouter une facture
+                  {t.cockpit.addBillShort}
                 </button>
               </div>
             )}
@@ -243,8 +285,8 @@ export default function HomePage() {
           <div className="rounded-2xl glass-panel-elevated p-5 border border-white/[0.08] flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                <h2 className="text-sm font-bold text-white tracking-tight">Modules d&apos;Analyse</h2>
-                <span className="text-[10px] font-mono text-slate-400">Calculs Réels</span>
+                <h2 className="text-sm font-bold text-white tracking-tight">{t.cockpit.modulesTitle}</h2>
+                <span className="text-[10px] font-mono text-slate-400">{t.cockpit.modulesTag}</span>
               </div>
 
               <Link
@@ -253,13 +295,11 @@ export default function HomePage() {
               >
                 <div>
                   <div className="text-xs font-bold text-white group-hover:text-amber-400">
-                    Optimisation STEG &amp; cos φ
+                    {t.cockpit.moduleEnergyTitle}
                   </div>
-                  <div className="text-[11px] text-slate-400">
-                    Condensateurs, effacement de pointe &amp; ANME
-                  </div>
+                  <div className="text-[11px] text-slate-400">{t.cockpit.moduleEnergyDesc}</div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-amber-400" />
+                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-amber-400 rtl:rotate-180 shrink-0" />
               </Link>
 
               <Link
@@ -268,13 +308,11 @@ export default function HomePage() {
               >
                 <div>
                   <div className="text-xs font-bold text-white group-hover:text-blue-400">
-                    Conformité CBAM &amp; Export XML
+                    {t.cockpit.moduleCbamTitle}
                   </div>
-                  <div className="text-[11px] text-slate-400">
-                    Inventaire Scope 1-2-3 &amp; déclaration UE
-                  </div>
+                  <div className="text-[11px] text-slate-400">{t.cockpit.moduleCbamDesc}</div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-blue-400" />
+                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-blue-400 rtl:rotate-180 shrink-0" />
               </Link>
 
               <Link
@@ -283,33 +321,33 @@ export default function HomePage() {
               >
                 <div>
                   <div className="text-xs font-bold text-white group-hover:text-emerald-400">
-                    Import &amp; Scanner Document AI
+                    {t.cockpit.moduleOcrTitle}
                   </div>
-                  <div className="text-[11px] text-slate-400">
-                    Lecture automatique des factures PDF / photo
-                  </div>
+                  <div className="text-[11px] text-slate-400">{t.cockpit.moduleOcrDesc}</div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-emerald-400" />
+                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-emerald-400 rtl:rotate-180 shrink-0" />
               </Link>
             </div>
 
             {/* BioClaira Pack Gold Separate Add-on Card */}
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">BioClaira — Audit Déchets</span>
+                <span className="text-xs font-bold text-white">{t.cockpit.bioclairaTitle}</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                   {subscriptionPlan === 'gold' ? 'Gold Actif' : 'Pack Gold'}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Module séparé de valorisation des rejets industriels et d&apos;économie circulaire ({results.annualCircularValorizationTnd.toLocaleString('fr-TN')} TND/an).
+                {results.hasWasteData
+                  ? `${results.annualCircularValorizationTnd.toLocaleString(numLocale)} ${t.cockpit.unitTndYear}`
+                  : t.cockpit.emptyValue}
               </p>
               <Link
                 href="/symbiosis"
                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 hover:text-amber-200"
               >
-                <span>Ouvrir l&apos;audit séparé BioClaira</span>
-                <ArrowRight className="h-3 w-3" />
+                <span>{t.cockpit.bioclairaOpen}</span>
+                <ArrowRight className="h-3 w-3 rtl:rotate-180" />
               </Link>
             </div>
           </div>
@@ -319,34 +357,35 @@ export default function HomePage() {
         <div className="rounded-2xl glass-panel-elevated p-5 border border-white/[0.08] space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-bold text-white">Historique des relevés STEG enregistrés</h2>
+              <h2 className="text-sm font-bold text-white">{t.cockpit.billsHistoryTitle}</h2>
               <p className="text-xs text-slate-400">
-                {auditData.monthlyBills.length} période(s) enregistrée(s)
+                {auditData.monthlyBills.length} {t.cockpit.billsCountSuffix}
               </p>
             </div>
             <button
+              type="button"
               onClick={() => openAddDataModal('steg')}
               className="text-xs font-semibold text-emerald-400 hover:text-emerald-300"
             >
-              + Ajouter une période
+              {t.cockpit.addPeriodBtn}
             </button>
           </div>
 
           {auditData.monthlyBills.length === 0 ? (
             <div className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-6 text-center text-xs text-slate-500">
-              Aucune facture mensuelle enregistrée pour le moment.
+              {t.cockpit.noBillsMsg}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-start text-xs">
                 <thead className="border-b border-white/[0.08] text-[10px] font-mono uppercase text-slate-400">
                   <tr>
-                    <th className="py-2 pe-4">Période</th>
-                    <th className="py-2 px-3">Total kWh</th>
-                    <th className="py-2 px-3">Pointe kWh</th>
-                    <th className="py-2 px-3">cos φ</th>
-                    <th className="py-2 px-3">Montant TTC</th>
-                    <th className="py-2 px-3">Source</th>
+                    <th className="py-2 pe-4 text-start">Période</th>
+                    <th className="py-2 px-3 text-start">Total kWh</th>
+                    <th className="py-2 px-3 text-start">Pointe kWh</th>
+                    <th className="py-2 px-3 text-start">cos φ</th>
+                    <th className="py-2 px-3 text-start">TTC</th>
+                    <th className="py-2 px-3 text-start">Source</th>
                     <th className="py-2 ps-3 text-end">Action</th>
                   </tr>
                 </thead>
@@ -358,18 +397,19 @@ export default function HomePage() {
                         <td className="py-2.5 pe-4">
                           {String(b.month).padStart(2, '0')}/{b.year}
                         </td>
-                        <td className="py-2.5 px-3">{tot.toLocaleString('fr-TN')}</td>
-                        <td className="py-2.5 px-3 text-amber-400">{b.kwhPointe.toLocaleString('fr-TN')}</td>
+                        <td className="py-2.5 px-3">{tot.toLocaleString(numLocale)}</td>
+                        <td className="py-2.5 px-3 text-amber-400">{b.kwhPointe.toLocaleString(numLocale)}</td>
                         <td className="py-2.5 px-3">{b.cosPhi > 0 ? b.cosPhi : '—'}</td>
                         <td className="py-2.5 px-3 text-emerald-400">
-                          {b.totalTtcTnd.toLocaleString('fr-TN')} TND
+                          {b.totalTtcTnd.toLocaleString(numLocale)} TND
                         </td>
                         <td className="py-2.5 px-3 uppercase text-[10px] text-slate-400">{b.source}</td>
                         <td className="py-2.5 ps-3 text-end">
                           <button
+                            type="button"
                             onClick={() => removeMonthlyBill(b.id)}
                             className="text-slate-500 hover:text-red-400 p-1"
-                            title="Supprimer"
+                            title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -387,73 +427,83 @@ export default function HomePage() {
   }
 
   // ============================================================================
-  // PUBLIC LANDING PAGE (UNAUTHENTICATED — ZERO PREVIEW, ZERO FAKE DATA)
+  // PUBLIC LANDING PAGE (UNAUTHENTICATED — FULL TRILINGUAL + RTL)
   // ============================================================================
   return (
     <div className="space-y-24 py-6 sm:py-10">
       {/* 1. HERO SECTION */}
       <section className="max-w-4xl mx-auto text-center space-y-6 pt-4">
         <div className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-[11px] font-mono font-semibold text-emerald-400">
-          Plateforme SaaS B2B Zéro-CAPEX • Industrie Exportatrice
+          {t.landing.heroBadge}
         </div>
 
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12] font-sans">
-          Conformité CBAM, Facture STEG &amp;{' '}
-          <span className="text-emerald-400">Revenus Circulaires</span>
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
+          {t.landing.heroTitlePrefix}{' '}
+          <span className="text-emerald-400">{t.landing.heroTitleHighlight}</span>
         </h1>
 
         <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          <strong className="text-white">SymbioCarb AI</strong> répond à cette urgence par une plateforme logicielle SaaS B2B{' '}
-          <strong className="text-white">zéro-CAPEX (sans installation matérielle)</strong> qui automatise la conformité carbone CBAM, optimise mathématiquement la facture STEG et transforme les rejets industriels en revenus circulaires.
+          <strong className="text-white">{t.appName}</strong> {t.landing.heroDescriptionBefore}{' '}
+          <strong className="text-white">{t.landing.heroDescriptionBold}</strong>{' '}
+          {t.landing.heroDescriptionAfter}
         </p>
 
-        {/* Primary Action: Account Creation / Sign In */}
+        {/* Primary Action: Account Creation / Sign In / Guest Workspace */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
+            type="button"
             onClick={() => openAuthModal('signup')}
             className="btn-tactile w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-7 py-3.5 text-sm font-bold text-black transition-all shadow-md"
           >
-            <span>Créer un compte entreprise</span>
-            <ArrowRight className="h-4 w-4" />
+            <span>{t.landing.ctaCreateAccount}</span>
+            <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           </button>
 
           <button
+            type="button"
             onClick={() => openAuthModal('signin')}
             className="btn-tactile w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-white/[0.12] bg-[#0E1526]/80 px-6 py-3.5 text-sm font-semibold text-slate-200 hover:bg-white/[0.06] hover:text-white transition-all"
           >
-            Se connecter
+            {t.landing.ctaSignIn}
           </button>
+
+          <Link
+            href="/cbam"
+            className="btn-tactile w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3.5 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-all"
+          >
+            {t.landing.ctaOpenWorkspace}
+          </Link>
         </div>
 
-        {/* 3 Crisp Engineering Pillars (Type only, zero decorative icon noise) */}
+        {/* 3 Crisp Engineering Pillars */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 text-start">
           <div className="rounded-xl border border-white/[0.08] bg-[#0D1322]/70 p-4">
             <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">
-              01 / Zéro-CAPEX
+              {t.landing.pillars.p1Label}
             </div>
-            <div className="text-sm font-bold text-white mt-1">Sans installation matérielle</div>
+            <div className="text-sm font-bold text-white mt-1">{t.landing.pillars.p1Title}</div>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Exploitation directe de vos factures officielles STEG et relevés de production, par scan OCR ou saisie guidée.
+              {t.landing.pillars.p1Desc}
             </p>
           </div>
 
           <div className="rounded-xl border border-white/[0.08] bg-[#0D1322]/70 p-4">
             <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-semibold">
-              02 / Optimisation STEG
+              {t.landing.pillars.p2Label}
             </div>
-            <div className="text-sm font-bold text-white mt-1">Calcul mathématique exact</div>
+            <div className="text-sm font-bold text-white mt-1">{t.landing.pillars.p2Title}</div>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Analyse des 4 tranches horaires, effacement de pointe et dimensionnement du facteur de puissance cos φ.
+              {t.landing.pillars.p2Desc}
             </p>
           </div>
 
           <div className="rounded-xl border border-white/[0.08] bg-[#0D1322]/70 p-4">
             <div className="text-[10px] font-mono uppercase tracking-wider text-blue-400 font-semibold">
-              03 / Conformité CBAM UE
+              {t.landing.pillars.p3Label}
             </div>
-            <div className="text-sm font-bold text-white mt-1">Déclarations douanières prêtes</div>
+            <div className="text-sm font-bold text-white mt-1">{t.landing.pillars.p3Title}</div>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Calcul du SEE spécifique Scope 1-2-3 et génération du fichier XML conforme au Règlement (UE) 2023/956.
+              {t.landing.pillars.p3Desc}
             </p>
           </div>
         </div>
@@ -462,12 +512,12 @@ export default function HomePage() {
       {/* 2. REGULATORY REFERENCE BLOCK */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-white/[0.08] pb-4">
-          <div>
+          <div className="text-start">
             <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold mb-1">
-              Cadre Réglementaire &amp; Normes
+              {t.landing.regulatory.eyebrow}
             </div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Conformité Légale et Référentiels Techniques
+              {t.landing.regulatory.title}
             </h2>
           </div>
 
@@ -475,27 +525,27 @@ export default function HomePage() {
             href="/blog"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
           >
-            <span>Consulter le centre réglementaire</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <span>{t.landing.regulatory.linkText}</span>
+            <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-start">
           <Link
             href="/blog"
             className="rounded-2xl glass-panel-elevated p-5 border border-white/[0.08] hover:border-blue-500/40 transition-all group space-y-2.5 card-hover"
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                CBAM UE 2023/956
+                {t.landing.regulatory.card1Badge}
               </span>
-              <span className="text-[10px] font-mono text-slate-500">Export UE</span>
+              <span className="text-[10px] font-mono text-slate-500">{t.landing.regulatory.card1Tag}</span>
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
-              Mécanisme d&apos;Ajustement Carbone aux Frontières
+              {t.landing.regulatory.card1Title}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Calcul des Émissions Spécifiques Incorporées (SEE) réelles par code douanier CN à 8 chiffres et export XML DG TAXUD.
+              {t.landing.regulatory.card1Desc}
             </p>
           </Link>
 
@@ -505,15 +555,15 @@ export default function HomePage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                ISO 14064-1:2018
+                {t.landing.regulatory.card2Badge}
               </span>
-              <span className="text-[10px] font-mono text-slate-500">Bilan GES</span>
+              <span className="text-[10px] font-mono text-slate-500">{t.landing.regulatory.card2Tag}</span>
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
-              Inventaire Gaz à Effet de Serre &amp; Réseau STEG
+              {t.landing.regulatory.card2Title}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Comptabilisation structurée des Scopes 1, 2 et 3 intégrant le facteur d&apos;émission officiel du réseau électrique tunisien.
+              {t.landing.regulatory.card2Desc}
             </p>
           </Link>
 
@@ -523,61 +573,61 @@ export default function HomePage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                STEG MT &amp; ANME FTE
+                {t.landing.regulatory.card3Badge}
               </span>
-              <span className="text-[10px] font-mono text-slate-500">ISO 50001</span>
+              <span className="text-[10px] font-mono text-slate-500">{t.landing.regulatory.card3Tag}</span>
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">
-              Tarification Moyenne Tension &amp; Subventions FTE 70%
+              {t.landing.regulatory.card3Title}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Élimination des pénalités réactives (cos φ &lt; 0.85), maîtrise de la puissance appelée et mobilisation du Fonds de Transition Énergétique.
+              {t.landing.regulatory.card3Desc}
             </p>
           </Link>
         </div>
       </section>
 
       {/* 3. STARTUP SECTION: WHO WE ARE & MISSION */}
-      <section className="rounded-3xl border border-white/[0.08] bg-[#0D1322]/70 p-6 sm:p-10 space-y-6">
+      <section className="rounded-3xl border border-white/[0.08] bg-[#0D1322]/70 p-6 sm:p-10 space-y-6 text-start">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-5 space-y-3">
             <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">
-              À Propos de Notre Startup
+              {t.landing.about.eyebrow}
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              L&apos;ingénierie industrielle tunisienne au service de la compétitivité export
+              {t.landing.about.title}
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              SymbioCarb AI est une startup DeepTech B2B fondée par des ingénieurs en efficacité énergétique, génie des procédés et architecture logicielle.
+              {t.landing.about.intro}
             </p>
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl border border-white/[0.08] bg-black/25 p-4 space-y-1.5">
-              <div className="text-xs font-bold text-white">Notre Mission</div>
+              <div className="text-xs font-bold text-white">{t.landing.about.missionTitle}</div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Protéger les marges des usines tunisiennes face à la hausse des coûts électriques et aux nouvelles taxes carbone européennes (CBAM), sans nécessiter de cabinets de conseil longs ou coûteux.
+                {t.landing.about.missionDesc}
               </p>
             </div>
 
             <div className="rounded-xl border border-white/[0.08] bg-black/25 p-4 space-y-1.5">
-              <div className="text-xs font-bold text-white">Approche Zéro-CAPEX</div>
+              <div className="text-xs font-bold text-white">{t.landing.about.zeroCapexTitle}</div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Aucun capteur IoT à acheter ni arrêt de production : vous importez vos documents officiels existants et nos modèles déterministes calculent immédiatement vos leviers d&apos;économie.
+                {t.landing.about.zeroCapexDesc}
               </p>
             </div>
 
             <div className="rounded-xl border border-white/[0.08] bg-black/25 p-4 space-y-1.5">
-              <div className="text-xs font-bold text-white">Rigueur Mathématique</div>
+              <div className="text-xs font-bold text-white">{t.landing.about.mathTitle}</div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Toutes nos équations énergétiques et bilans carbone suivent strictement les arrêtés STEG, le Règlement UE 2023/956 et les référentiels ISO 14064-1 / 50001.
+                {t.landing.about.mathDesc}
               </p>
             </div>
 
             <div className="rounded-xl border border-white/[0.08] bg-black/25 p-4 space-y-1.5">
-              <div className="text-xs font-bold text-white">Option Circulaire BioClaira</div>
+              <div className="text-xs font-bold text-white">{t.landing.about.bioclairaTitle}</div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Pour les sites générant des sous-produits ou déchets valorisables, notre module avancé BioClaira transforme ces rejets en nouvelles sources de revenus circulaires.
+                {t.landing.about.bioclairaDesc}
               </p>
             </div>
           </div>
@@ -588,17 +638,16 @@ export default function HomePage() {
       <section className="space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">
-            Offres d&apos;Abonnement B2B
+            {t.landing.pricing.eyebrow}
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Des Forfaits Adaptés à Chaque Maturité Industrielle
+            {t.landing.pricing.title}
           </h2>
-          <p className="text-xs text-slate-400">
-            Commencez par l&apos;optimisation énergétique et la conformité CBAM, puis activez l&apos;audit séparé des déchets BioClaira avec le Pack Gold.
-          </p>
+          <p className="text-xs text-slate-400">{t.landing.pricing.subtitle}</p>
 
           <div className="inline-flex items-center rounded-xl border border-white/[0.08] bg-[#0E1526]/80 p-1 mt-2">
             <button
+              type="button"
               onClick={() => setBillingCycle('monthly')}
               className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
                 billingCycle === 'monthly'
@@ -606,9 +655,10 @@ export default function HomePage() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Mensuel
+              {t.landing.pricing.monthly}
             </button>
             <button
+              type="button"
               onClick={() => setBillingCycle('annual')}
               className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 ${
                 billingCycle === 'annual'
@@ -616,134 +666,107 @@ export default function HomePage() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>Annuel</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono">-20%</span>
+              <span>{t.landing.pricing.annual}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono">
+                {t.landing.pricing.discountBadge}
+              </span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start">
           {/* Pack Starter */}
           <div className="rounded-2xl glass-panel-elevated p-6 border border-white/[0.08] flex flex-col justify-between space-y-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-base font-bold text-white">Pack Starter PME</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Diagnostic énergétique STEG et suivi mensuel
-                </p>
+                <h3 className="text-base font-bold text-white">{t.landing.pricing.starterTitle}</h3>
+                <p className="text-xs text-slate-400 mt-1">{t.landing.pricing.starterDesc}</p>
               </div>
               <div className="text-3xl font-black text-white font-mono tabular-nums">
                 {billingCycle === 'annual' ? '150' : '190'} TND{' '}
-                <span className="text-xs font-normal text-slate-400">/ mois</span>
+                <span className="text-xs font-normal text-slate-400">{t.landing.pricing.perMonth}</span>
               </div>
               <ul className="text-xs text-slate-300 space-y-2.5 pt-3 border-t border-white/[0.08]">
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Analyse des 4 tranches horaires STEG MT</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Calcul batterie de condensateurs cos φ</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Import CSV historique &amp; suivi mensuel</span>
-                </li>
+                {t.landing.pricing.starterFeatures.map((feat, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{feat}</span>
+                  </li>
+                ))}
               </ul>
             </div>
             <button
+              type="button"
               onClick={() => openAuthModal('signup')}
               className="btn-tactile w-full rounded-xl border border-white/[0.12] bg-white/[0.04] py-2.5 text-xs font-bold text-white hover:bg-white/[0.08]"
             >
-              Créer un compte
+              {t.landing.pricing.starterCta}
             </button>
           </div>
 
           {/* Pack Exportateur Pro */}
           <div className="rounded-2xl glass-panel-elevated p-6 border-2 border-emerald-500/70 relative flex flex-col justify-between space-y-6">
-            <div className="absolute -top-3 start-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-emerald-500 text-black text-[10px] font-bold font-mono uppercase tracking-wider">
-              Recommandé Exportateurs
+            <div className="absolute -top-3 inset-x-0 flex justify-center">
+              <span className="px-3 py-0.5 rounded-full bg-emerald-500 text-black text-[10px] font-bold font-mono uppercase tracking-wider">
+                {t.landing.pricing.proBadge}
+              </span>
             </div>
             <div className="space-y-4">
               <div>
-                <h3 className="text-base font-bold text-white">Pack Exportateur Pro</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Conformité CBAM complète &amp; optimisation STEG
-                </p>
+                <h3 className="text-base font-bold text-white">{t.landing.pricing.proTitle}</h3>
+                <p className="text-xs text-slate-400 mt-1">{t.landing.pricing.proDesc}</p>
               </div>
               <div className="text-3xl font-black text-white font-mono tabular-nums">
                 {billingCycle === 'annual' ? '390' : '490'} TND{' '}
-                <span className="text-xs font-normal text-slate-400">/ mois</span>
+                <span className="text-xs font-normal text-slate-400">{t.landing.pricing.perMonth}</span>
               </div>
               <ul className="text-xs text-slate-200 space-y-2.5 pt-3 border-t border-white/[0.08]">
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Tout le Pack Starter PME inclus</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Bilan Carbone Scope 1, 2 &amp; 3 (BOM)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Export XML officiel douanes UE (CBAM)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Scanner OCR des factures STEG (PDF / photo)</span>
-                </li>
+                {t.landing.pricing.proFeatures.map((feat, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{feat}</span>
+                  </li>
+                ))}
               </ul>
             </div>
             <button
+              type="button"
               onClick={() => openAuthModal('signup')}
               className="btn-tactile w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 py-2.5 text-xs font-bold text-black"
             >
-              Démarrer avec Exportateur Pro
+              {t.landing.pricing.proCta}
             </button>
           </div>
 
           {/* Pack Gold + BioClaira */}
           <div className="rounded-2xl glass-panel-elevated p-6 border border-amber-500/40 flex flex-col justify-between space-y-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-white">Pack Gold + BioClaira</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  Option Circulaire
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-base font-bold text-white">{t.landing.pricing.goldTitle}</h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
+                  {t.landing.pricing.goldBadge}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Conformité complète + audit séparé et valorisation des rejets
-              </p>
+              <p className="text-xs text-slate-400 mt-1">{t.landing.pricing.goldDesc}</p>
               <div className="text-3xl font-black text-white font-mono tabular-nums">
                 {billingCycle === 'annual' ? '890' : '1 090'} TND{' '}
-                <span className="text-xs font-normal text-slate-400">/ mois</span>
+                <span className="text-xs font-normal text-slate-400">{t.landing.pricing.perMonth}</span>
               </div>
               <ul className="text-xs text-slate-300 space-y-2.5 pt-3 border-t border-white/[0.08]">
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Tout le Pack Exportateur Pro inclus</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>
-                    <strong className="text-white">Module BioClaira :</strong> audit séparé de vos déchets industriels
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Propositions de recyclage, valorisation &amp; revenus circulaires</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Intégration des crédits d&apos;émissions évitées au bilan global</span>
-                </li>
+                {t.landing.pricing.goldFeatures.map((feat, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span>{feat}</span>
+                  </li>
+                ))}
               </ul>
             </div>
             <button
+              type="button"
               onClick={() => openAuthModal('signup')}
               className="btn-tactile w-full rounded-xl border border-amber-500/40 bg-amber-500/10 py-2.5 text-xs font-bold text-amber-300 hover:bg-amber-500/20"
             >
-              Choisir le Pack Gold
+              {t.landing.pricing.goldCta}
             </button>
           </div>
         </div>
@@ -752,18 +775,19 @@ export default function HomePage() {
       {/* 5. FINAL CALL TO ACTION */}
       <section className="rounded-3xl glass-panel-elevated p-8 sm:p-12 border border-emerald-500/30 text-center space-y-4">
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-          Initialisez l&apos;espace de votre usine dès aujourd&apos;hui
+          {t.landing.finalCta.title}
         </h2>
         <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-          Créez votre compte, importez votre première facture STEG ou démarrez à zéro pour suivre vos consommations et votre conformité au fur et à mesure.
+          {t.landing.finalCta.subtitle}
         </p>
         <div className="pt-2">
           <button
+            type="button"
             onClick={() => openAuthModal('signup')}
             className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-7 py-3 text-sm font-bold text-black transition-all"
           >
-            <span>Créer un compte entreprise</span>
-            <ArrowRight className="h-4 w-4" />
+            <span>{t.landing.finalCta.button}</span>
+            <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           </button>
         </div>
       </section>
