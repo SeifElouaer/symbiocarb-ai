@@ -24,6 +24,8 @@ export const fr = {
     badge: 'Mode invité : vos données restent sur cet appareil',
     reset: 'Réinitialiser',
     openModules: 'Accéder aux modules',
+    loadDemo: 'Charger le cas démo (Hédi, Ben Arous)',
+    demoTag: 'DÉMO',
   },
 
   // Navigation

@@ -19,6 +19,7 @@ import {
   EUR_TO_TND_RATE,
   isCbamPrecursorCnCode,
 } from '@/lib/engine/cbam-config';
+import { DEMO_HEDI_BEN_AROUS } from './demo-case';
 import { useAuth } from '@/lib/auth/auth-context';
 
 export interface MonthlyBillEntry {
@@ -237,6 +238,7 @@ interface AuditContextType {
   addBomMaterial: (material: Omit<BomMaterialEntry, 'id'>) => void;
   updateBomMaterial: (id: string, updates: Partial<BomMaterialEntry>) => void;
   removeBomMaterial: (id: string) => void;
+  loadDemoCase: () => void;
   resetAuditData: () => void;
   results: AuditResults;
   isAddDataOpen: boolean;
@@ -469,6 +471,19 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
       persistData(next);
       return next;
     });
+  };
+
+  const loadDemoCase = () => {
+    // Hard safety guard: demo data must NEVER enter an authenticated workspace
+    if (isAuthenticated) return;
+    const clone: AuditWizardData = {
+      ...DEMO_HEDI_BEN_AROUS,
+      monthlyBills: DEMO_HEDI_BEN_AROUS.monthlyBills.map((b) => ({ ...b })),
+      bomMaterials: DEMO_HEDI_BEN_AROUS.bomMaterials.map((m) => ({ ...m })),
+      precursorSwitches: { ...DEMO_HEDI_BEN_AROUS.precursorSwitches },
+    };
+    setAuditData(clone);
+    persistData(clone);
   };
 
   const resetAuditData = () => {
@@ -709,6 +724,7 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
         addBomMaterial,
         updateBomMaterial,
         removeBomMaterial,
+        loadDemoCase,
         resetAuditData,
         results,
         isAddDataOpen,

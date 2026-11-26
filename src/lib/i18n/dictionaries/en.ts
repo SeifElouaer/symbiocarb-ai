@@ -21,6 +21,8 @@ export const en = {
     badge: 'Guest mode: data stays on this device',
     reset: 'Reset',
     openModules: 'Open Workspace',
+    loadDemo: 'Load demo case (Hédi, Ben Arous)',
+    demoTag: 'DEMO',
   },
 
   nav: {
