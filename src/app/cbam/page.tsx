@@ -1,24 +1,64 @@
 'use client';
 
 // ==============================================================================
-// Module CBAM: EU Carbon Border Adjustment Mechanism & ISO 14064-1
-// Uses unified cbam-calculator (via AuditContext results.cbam) and POST supplier XML.
+// Module CBAM: EU Carbon Border Adjustment Mechanism (2026+ Definitive Period)
+// Displays Result A (ISO 14064-1 Corporate) vs Result B (CBAM Scope),
+// 2026-2034 phase-in chart, de minimis 50t threshold, BOM precursor flags & XML.
 // ==============================================================================
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from '@/lib/i18n/use-translation';
 import { useAudit } from '@/lib/audit/audit-context';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { AuditReportDialog } from '@/components/cbam/AuditReportDialog';
 import { FALLBACK_EMISSION_FACTORS } from '@/lib/supabase/fallback-data';
-import { STEG_GRID_EF_KG_CO2E_PER_KWH } from '@/lib/engine/cbam-config';
-import { buildCbamXmlFilename, validateCbamXmlInput } from '@/lib/engine/cbam-xml';
+import {
+  CBAM_DE_MINIMIS_TONNES_PER_YEAR,
+  CBAM_PHASE_IN_YEARS,
+  STEG_GRID_EF_KG_CO2E_PER_KWH,
+  getFreeAllocationFactor,
+  isCbamPrecursorCnCode,
+} from '@/lib/engine/cbam-config';
+import { projectCbamLiabilityByYear } from '@/lib/engine/cbam-calculator';
+import {
+  buildCbamInputFromPayload,
+  buildCbamXmlFilename,
+  validateCbamXmlInput,
+} from '@/lib/engine/cbam-xml';
 import { BomEntry } from '@/types';
-import { Download, Printer, Plus, Trash2, AlertCircle } from 'lucide-react';
+import {
+  Download,
+  Printer,
+  Plus,
+  Trash2,
+  AlertCircle,
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  Info,
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Cell,
+} from 'recharts';
 
 export default function CbamPage() {
   const { t, locale } = useTranslation();
-  const { auditData, results, addBomMaterial, removeBomMaterial, openAddDataModal } = useAudit();
+  const {
+    auditData,
+    results,
+    updateAuditData,
+    addBomMaterial,
+    updateBomMaterial,
+    removeBomMaterial,
+    openAddDataModal,
+  } = useAudit();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -35,32 +75,42 @@ export default function CbamPage() {
 
   const numLocale = locale === 'en' ? 'en-US' : 'fr-TN';
   const cbamResult = results.cbam;
+  const corp = cbamResult.corporateFootprint;
+  const cbam = cbamResult.cbamScope;
 
-  const xmlPayload = {
-    companyName: auditData.companyName,
-    fiscalId: auditData.fiscalId,
-    governorate: auditData.governorate,
-    industrialZone: auditData.industrialZone,
-    exportCnCode: auditData.exportCnCode,
-    exportProductName: auditData.exportProductName,
-    annualProductionTons: auditData.annualProductionTons,
-    annualExportTons: auditData.annualExportTons,
-    naturalGasM3: auditData.naturalGasM3,
-    heavyFuelTons: auditData.heavyFuelTons,
-    dieselLiters: auditData.dieselLiters,
-    kwhJour: auditData.kwhJour,
-    kwhPointe: auditData.kwhPointe,
-    kwhSoir: auditData.kwhSoir,
-    kwhNuit: auditData.kwhNuit,
-    steelTons: auditData.steelTons,
-    aluminumTons: auditData.aluminumTons,
-    bomMaterials: auditData.bomMaterials,
-    cbamReportingYear: auditData.cbamReportingYear,
-    cbamCertificatePriceEur: auditData.cbamCertificatePriceEur,
-    carbonPricePaidAbroadEur: auditData.carbonPricePaidAbroadEur,
-  };
+  const xmlPayload = useMemo(
+    () => ({
+      companyName: auditData.companyName,
+      fiscalId: auditData.fiscalId,
+      governorate: auditData.governorate,
+      industrialZone: auditData.industrialZone,
+      exportCnCode: auditData.exportCnCode,
+      exportProductName: auditData.exportProductName,
+      annualProductionTons: auditData.annualProductionTons,
+      annualExportTons: auditData.annualExportTons,
+      naturalGasM3: auditData.naturalGasM3,
+      heavyFuelTons: auditData.heavyFuelTons,
+      dieselLiters: auditData.dieselLiters,
+      kwhJour: auditData.kwhJour,
+      kwhPointe: auditData.kwhPointe,
+      kwhSoir: auditData.kwhSoir,
+      kwhNuit: auditData.kwhNuit,
+      steelTons: auditData.steelTons,
+      aluminumTons: auditData.aluminumTons,
+      bomMaterials: auditData.bomMaterials,
+      cbamReportingYear: auditData.cbamReportingYear,
+      cbamCertificatePriceEur: auditData.cbamCertificatePriceEur,
+      carbonPricePaidAbroadEur: auditData.carbonPricePaidAbroadEur,
+    }),
+    [auditData]
+  );
 
-  const xmlValidation = validateCbamXmlInput(xmlPayload);
+  const xmlValidation = useMemo(() => validateCbamXmlInput(xmlPayload), [xmlPayload]);
+
+  const phaseInSeries = useMemo(() => {
+    const baseInput = buildCbamInputFromPayload(xmlPayload);
+    return projectCbamLiabilityByYear(baseInput, CBAM_PHASE_IN_YEARS);
+  }, [xmlPayload]);
 
   const handleExportXml = async () => {
     if (!xmlValidation.valid) return;
@@ -125,6 +175,7 @@ export default function CbamPage() {
       cnCode8: bomCn.trim(),
       quantityTons: qty,
       efTco2ePerTon: Number.isFinite(ef) ? ef : 0,
+      isCbamRelevantPrecursor: isCbamPrecursorCnCode(bomCn.trim()),
     });
     setBomName('');
     setBomCn('');
@@ -136,8 +187,8 @@ export default function CbamPage() {
     id: m.id,
     org_id: 'factory',
     raw_description: m.name,
-    quantity: m.quantityTons * 1000,
-    unit: 'kg',
+    quantity: m.quantityTons,
+    unit: 't',
     scope: 3,
     total_tco2e: Number((m.quantityTons * m.efTco2ePerTon).toFixed(2)),
     matched_ef: {
@@ -149,13 +200,35 @@ export default function CbamPage() {
       category: 'raw_materials',
       cn_code_8: m.cnCode8,
       unit: 't',
-      ef_kgco2e_per_unit: m.efTco2ePerTon * 1000,
+      ef_kgco2e_per_unit: Number((m.efTco2ePerTon * 1000).toFixed(1)),
       scope: 3,
-      source_authority: 'Nomenclature Entreprise',
+      source_authority:
+        (m.isCbamRelevantPrecursor ?? isCbamPrecursorCnCode(m.cnCode8))
+          ? 'Précurseur CBAM'
+          : 'Scope 3 Hors CBAM',
     },
   }));
 
-  const hasValidSee = cbamResult.hasProduction && cbamResult.cbamScope.isInCbamScope;
+  const hasValidSee = cbamResult.hasProduction && cbam.isInCbamScope;
+  const isOutsideScope =
+    auditData.exportCnCode.trim().length > 0 && !cbam.isInCbamScope;
+  const showDeMinimisNotice =
+    auditData.euClientAnnualCbamTonnage > 0 &&
+    auditData.euClientAnnualCbamTonnage < CBAM_DE_MINIMIS_TONNES_PER_YEAR;
+
+  const sectorLabel = (s: typeof cbam.sector) => {
+    const map: Record<typeof cbam.sector, { fr: string; en: string; ar: string }> = {
+      iron_steel: { fr: 'Fer & Acier (CN 72/73)', en: 'Iron & Steel (CN 72/73)', ar: 'الحديد والصلب (CN 72/73)' },
+      aluminium: { fr: 'Aluminium (CN 76)', en: 'Aluminium (CN 76)', ar: 'الألمنيوم (CN 76)' },
+      cement: { fr: 'Ciment (CN 2523)', en: 'Cement (CN 2523)', ar: 'الإسمنت (CN 2523)' },
+      fertilisers: { fr: 'Engrais (CN 31/2808/2814/2834)', en: 'Fertilisers (CN 31/2808/2814/2834)', ar: 'الأسمدة (CN 31/2808/2814/2834)' },
+      outside_scope: { fr: 'Hors périmètre CBAM', en: 'Outside CBAM scope', ar: 'خارج نطاق CBAM' },
+    };
+    const item = map[s];
+    if (locale === 'en') return item.en;
+    if (locale === 'ar-TN') return item.ar;
+    return item.fr;
+  };
 
   return (
     <div className="space-y-6">
@@ -170,11 +243,11 @@ export default function CbamPage() {
           'Électricité STEG Scope 2 et matières premières entrantes Scope 3',
         ]}
         deliverables={[
-          'SEE spécifique CBAM (Scope B) et bilan ISO 14064-1 (Scope A)',
-          'Exposition estimée pour votre importateur UE',
+          'Bilan Corporate A (ISO 14064-1) vs Périmètre CBAM B (2026+)',
+          'Projection 2026–2034 & comparaison valeurs par défaut UE',
           t.cbam.exportXml,
         ]}
-        regulation="Règlement (UE) 2023/956, Règlement d'exécution (UE) 2025/2620 & ISO 14064-1"
+        regulation="Règlement (UE) 2023/956, Règlement d'exécution (UE) 2025/2620, (UE) 2025/2083 & ISO 14064-1"
       />
 
       {/* Header Actions */}
@@ -184,7 +257,7 @@ export default function CbamPage() {
             {t.cbam.exportXml} — {auditData.companyName || '—'}
           </h2>
           <p className="text-xs text-slate-400 mt-0.5 font-mono">
-            CN : {auditData.exportCnCode || '—'} • Production :{' '}
+            CN : {auditData.exportCnCode || '—'} · {sectorLabel(cbam.sector)} · Production :{' '}
             {auditData.annualProductionTons > 0
               ? `${auditData.annualProductionTons.toLocaleString(numLocale)} t/an`
               : '—'}
@@ -227,6 +300,7 @@ export default function CbamPage() {
         </div>
       </div>
 
+      {/* Validation / Scope / De Minimis Notices */}
       {(!xmlValidation.valid || xmlError) && (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs text-amber-200 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
@@ -234,14 +308,96 @@ export default function CbamPage() {
         </div>
       )}
 
-      {/* 4 Scorecards (Unified from cbamResult — identical to cockpit, PDF & XML) */}
+      {isOutsideScope && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-100 flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold">{t.cbam.outsideScopeTitle}</div>
+            <p className="text-amber-200/80 mt-0.5">{t.cbam.outsideScopeDesc}</p>
+          </div>
+        </div>
+      )}
+
+      {showDeMinimisNotice && (
+        <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-100 flex items-start gap-2.5">
+          <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+          <span>{t.cbam.deMinimisWarning}</span>
+        </div>
+      )}
+
+      {/* Definitive-Period Controls: Year, Certificate Price & 50t De Minimis */}
+      <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+            {t.cbam.reportingYearLabel}
+          </label>
+          <select
+            value={auditData.cbamReportingYear}
+            onChange={(e) => updateAuditData({ cbamReportingYear: Number(e.target.value) })}
+            className="w-full rounded-xl bg-black/40 border border-white/[0.12] px-3 py-2 text-xs font-mono text-white focus:border-blue-500 focus:outline-none"
+          >
+            {CBAM_PHASE_IN_YEARS.map((yr) => (
+              <option key={yr} value={yr}>
+                {yr} ({(getFreeAllocationFactor(yr) * 100).toFixed(1)}%)
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-slate-400 mt-1.5 font-mono">
+            Factor {cbam.reportingYear}: {(cbam.freeAllocationFactor * 100).toFixed(1)}% · Benchmark{' '}
+            {cbam.benchmarkTco2ePerTon} tCO₂e/t
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+            {t.cbam.certPriceLabel}
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={auditData.cbamCertificatePriceEur}
+            onChange={(e) =>
+              updateAuditData({
+                cbamCertificatePriceEur: Math.max(0, Number(e.target.value) || 0),
+              })
+            }
+            className="w-full rounded-xl bg-black/40 border border-white/[0.12] px-3 py-2 text-xs font-mono text-white focus:border-blue-500 focus:outline-none tabular-nums"
+          />
+          <p className="text-[11px] text-slate-400 mt-1.5 leading-snug">{t.cbam.certPriceHint}</p>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+            {t.cbam.clientTonnageLabel}
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={auditData.euClientAnnualCbamTonnage || ''}
+            placeholder="0"
+            onChange={(e) =>
+              updateAuditData({
+                euClientAnnualCbamTonnage: Math.max(0, Number(e.target.value) || 0),
+              })
+            }
+            className="w-full rounded-xl bg-black/40 border border-white/[0.12] px-3 py-2 text-xs font-mono text-white focus:border-amber-500 focus:outline-none tabular-nums"
+          />
+          <p className="text-[11px] text-slate-400 mt-1.5 font-mono">
+            De minimis UE : {CBAM_DE_MINIMIS_TONNES_PER_YEAR} t/an
+          </p>
+        </div>
+      </div>
+
+      {/* 4 Scorecards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-1.5">
           <div className="text-xs text-slate-400 font-medium">{t.cbam.seeTitle}</div>
           <div className="text-2xl font-extrabold font-mono text-white tabular-nums">
             {hasValidSee ? (
               <>
-                {cbamResult.cbamScope.cbamSeeTco2ePerTon}{' '}
+                {cbam.cbamSeeTco2ePerTon}{' '}
                 <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e/t</span>
               </>
             ) : (
@@ -260,7 +416,7 @@ export default function CbamPage() {
           <div className="text-2xl font-extrabold font-mono text-emerald-400 tabular-nums">
             {cbamResult.hasData ? (
               <>
-                {cbamResult.corporateFootprint.scope1DirectTco2e.toLocaleString(numLocale)}{' '}
+                {corp.scope1DirectTco2e.toLocaleString(numLocale)}{' '}
                 <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e</span>
               </>
             ) : (
@@ -275,7 +431,7 @@ export default function CbamPage() {
           <div className="text-2xl font-extrabold font-mono text-amber-400 tabular-nums">
             {cbamResult.hasData ? (
               <>
-                {cbamResult.corporateFootprint.scope2IndirectTco2e.toLocaleString(numLocale)}{' '}
+                {corp.scope2IndirectTco2e.toLocaleString(numLocale)}{' '}
                 <span className="text-xs text-slate-400 font-sans font-normal">tCO₂e</span>
               </>
             ) : (
@@ -292,7 +448,7 @@ export default function CbamPage() {
           <div className="text-2xl font-extrabold font-mono text-white tabular-nums">
             {hasValidSee ? (
               <>
-                {cbamResult.cbamScope.estimatedLiabilityEur.toLocaleString(numLocale)}{' '}
+                {cbam.estimatedLiabilityEur.toLocaleString(numLocale)}{' '}
                 <span className="text-xs text-slate-400 font-sans font-normal">€</span>
               </>
             ) : (
@@ -301,23 +457,179 @@ export default function CbamPage() {
           </div>
           <div className="text-[11px] text-slate-400 font-mono">
             {hasValidSee
-              ? `≈ ${cbamResult.cbamScope.estimatedLiabilityTnd.toLocaleString(numLocale)} TND (@ ${cbamResult.cbamScope.cbamCertificatePriceEur}€/t)`
+              ? `≈ ${cbam.estimatedLiabilityTnd.toLocaleString(numLocale)} TND (${cbam.certificatesRequired} cert. @ ${cbam.cbamCertificatePriceEur}€)`
               : t.cockpit.emptyValue}
           </div>
         </div>
       </div>
 
-      {/* Factory BOM Precursors Manager */}
+      {/* Result A (ISO 14064-1 Corporate) vs Result B (CBAM Scope) Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-3">
+          <div className="flex items-start justify-between gap-2 border-b border-white/[0.06] pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-white">{t.cbam.resultATitle}</h3>
+              <p className="text-[11px] text-slate-400">{t.cbam.resultASubtitle}</p>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.06] text-slate-300 border border-white/[0.1] shrink-0">
+              ISO 14064-1
+            </span>
+          </div>
+
+          <div className="space-y-2 text-xs font-mono">
+            <div className="flex justify-between">
+              <span className="text-slate-400 font-sans">Scope 1 (combustibles directs)</span>
+              <span className="text-white tabular-nums">{corp.scope1DirectTco2e.toLocaleString(numLocale)} tCO₂e</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400 font-sans">Scope 2 (électricité STEG)</span>
+              <span className="text-white tabular-nums">{corp.scope2IndirectTco2e.toLocaleString(numLocale)} tCO₂e</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400 font-sans">Scope 3 (tous intrants BOM)</span>
+              <span className="text-white tabular-nums">{corp.scope3AllBomTco2e.toLocaleString(numLocale)} tCO₂e</span>
+            </div>
+            <div className="flex justify-between border-t border-white/[0.08] pt-2 font-bold text-sm">
+              <span className="text-emerald-400 font-sans">Total Corporate A</span>
+              <span className="text-emerald-400 tabular-nums">
+                {cbamResult.hasData ? `${corp.totalTco2e.toLocaleString(numLocale)} tCO₂e/an` : '—'}
+              </span>
+            </div>
+            <div className="flex justify-between text-[11px] text-slate-400">
+              <span className="font-sans">Intensité corporate</span>
+              <span className="tabular-nums">
+                {cbamResult.hasProduction ? `${corp.intensityTco2ePerTon} tCO₂e/t` : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl glass-panel-elevated border border-blue-500/25 p-5 space-y-3">
+          <div className="flex items-start justify-between gap-2 border-b border-white/[0.06] pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-white">{t.cbam.resultBTitle}</h3>
+              <p className="text-[11px] text-slate-400">{t.cbam.resultBSubtitle}</p>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 shrink-0">
+              {sectorLabel(cbam.sector)}
+            </span>
+          </div>
+
+          <div className="space-y-2 text-xs font-mono">
+            <div className="flex justify-between">
+              <span className="text-slate-400 font-sans">Émissions directes (Scope 1)</span>
+              <span className="text-white tabular-nums">{cbam.directEmissionsTco2e.toLocaleString(numLocale)} tCO₂e</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400 font-sans">
+                Précurseurs CBAM ({cbam.excludedBomTco2e > 0 ? `${cbam.excludedBomTco2e} t hors CBAM exclus` : 'BOM'})
+              </span>
+              <span className="text-white tabular-nums">{cbam.cbamRelevantPrecursorsTco2e.toLocaleString(numLocale)} tCO₂e</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400 font-sans">
+                Émissions indirectes ({cbam.indirectEmissionsIncluded ? 'incluses' : 'pour info uniquement'})
+              </span>
+              <span className="text-slate-300 tabular-nums">
+                {cbam.indirectEmissionsCountedTco2e.toLocaleString(numLocale)} tCO₂e
+                {!cbam.indirectEmissionsIncluded && cbam.indirectEmissionsForInfoTco2e > 0
+                  ? ` (${cbam.indirectEmissionsForInfoTco2e} t info)`
+                  : ''}
+              </span>
+            </div>
+            <div className="flex justify-between border-t border-white/[0.08] pt-2 font-bold text-sm">
+              <span className="text-blue-400 font-sans">Total CBAM B · SEE {hasValidSee ? `${cbam.cbamSeeTco2ePerTon} t/t` : '—'}</span>
+              <span className="text-blue-400 tabular-nums">
+                {hasValidSee ? `${cbam.totalCbamEmbeddedTco2e.toLocaleString(numLocale)} tCO₂e` : '—'}
+              </span>
+            </div>
+            <div className="flex justify-between text-[11px] text-slate-400">
+              <span className="font-sans">
+                Allocation gratuite {cbam.reportingYear} ({(cbam.freeAllocationFactor * 100).toFixed(1)}%)
+              </span>
+              <span className="tabular-nums">−{cbam.freeAllocationDeductionTco2e.toLocaleString(numLocale)} tCO₂e</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-400 pt-1">
+            {cbam.indirectEmissionsIncluded ? t.cbam.indirectIncludedYes : t.cbam.indirectIncludedNo}
+          </p>
+        </div>
+      </div>
+
+      {/* Phase-In Trajectory Chart (2026-2034) + Timeline Facts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 rounded-2xl glass-panel-elevated border border-white/[0.08] p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-white">{t.cbam.phaseInChartTitle}</h3>
+            <span className="text-[11px] font-mono text-blue-400">
+              {cbam.exportTonnes > 0 ? `${cbam.exportTonnes.toLocaleString(numLocale)} t` : '—'} · {cbam.cbamCertificatePriceEur} €/t
+            </span>
+          </div>
+
+          {hasValidSee ? (
+            <div className="h-56 w-full ltr-only">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={phaseInSeries}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
+                  <XAxis dataKey="year" stroke="#64748B" fontSize={11} />
+                  <YAxis stroke="#64748B" fontSize={11} />
+                  <Tooltip
+                    formatter={(value: number) => [`${value.toLocaleString(numLocale)} €`, 'CBAM']}
+                    contentStyle={{
+                      backgroundColor: '#0A0F1D',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '10px',
+                      color: '#F8FAFC',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="liabilityEur" radius={[4, 4, 0, 0]}>
+                    {phaseInSeries.map((pt) => (
+                      <Cell
+                        key={pt.year}
+                        fill={pt.year === auditData.cbamReportingYear ? '#10B981' : '#3B82F6'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-56 rounded-xl border border-dashed border-white/[0.08] bg-black/20 flex items-center justify-center text-xs text-slate-500">
+              {t.cockpit.emptyValue}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl glass-panel-elevated border border-blue-500/20 bg-blue-500/[0.04] p-5 space-y-3">
+          <div className="flex items-center gap-2 text-blue-300">
+            <CalendarClock className="h-4 w-4 shrink-0" />
+            <h3 className="text-sm font-bold text-white">{t.cbam.timelineTitle}</h3>
+          </div>
+          <ul className="space-y-3 text-xs text-slate-300 leading-relaxed">
+            {t.cbam.timelineFacts.map((fact, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
+                <span>{fact}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Factory BOM Precursors Manager (with CBAM precursor flag & toggle) */}
       <div className="rounded-2xl glass-panel-elevated border border-white/[0.08] p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-bold text-white">{t.cbam.bomTitle}</h2>
             <p className="text-xs text-slate-400">
-              Ajoutez les matières premières entrantes de votre usine pour intégrer leurs émissions incorporées.
+              Les précurseurs CBAM (chapitres 72, 73 listés, 76, 2523, 31, H₂ 2804 10) sont détectés automatiquement et restent modifiables.
             </p>
           </div>
           <div className="text-xs font-mono text-emerald-400">
-            Scope 3 Total : {cbamResult.corporateFootprint.scope3AllBomTco2e.toLocaleString(numLocale)} tCO₂e
+            Scope 3 Total A : {corp.scope3AllBomTco2e.toLocaleString(numLocale)} tCO₂e · CBAM B :{' '}
+            {cbam.cbamRelevantPrecursorsTco2e.toLocaleString(numLocale)} tCO₂e
           </div>
         </div>
 
@@ -373,33 +685,55 @@ export default function CbamPage() {
                 <tr>
                   <th className="py-2.5 px-4 text-start">Matière</th>
                   <th className="py-2.5 px-4 text-start">Code CN</th>
+                  <th className="py-2.5 px-4 text-start">CBAM</th>
                   <th className="py-2.5 px-4 text-start">Quantité</th>
                   <th className="py-2.5 px-4 text-start">Facteur</th>
-                  <th className="py-2.5 px-4 text-start">Total Scope 3</th>
+                  <th className="py-2.5 px-4 text-start">Total</th>
                   <th className="py-2.5 px-4 text-end">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.05] font-mono">
-                {auditData.bomMaterials.map((m) => (
-                  <tr key={m.id} className="text-slate-200">
-                    <td className="py-2.5 px-4 font-sans font-medium text-white">{m.name}</td>
-                    <td className="py-2.5 px-4 text-blue-400">{m.cnCode8 || '—'}</td>
-                    <td className="py-2.5 px-4">{m.quantityTons} t</td>
-                    <td className="py-2.5 px-4">{m.efTco2ePerTon} tCO₂e/t</td>
-                    <td className="py-2.5 px-4 text-emerald-400">
-                      {(m.quantityTons * m.efTco2ePerTon).toFixed(2)} tCO₂e
-                    </td>
-                    <td className="py-2.5 px-4 text-end">
-                      <button
-                        type="button"
-                        onClick={() => removeBomMaterial(m.id)}
-                        className="text-slate-500 hover:text-red-400 p-1"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {auditData.bomMaterials.map((m) => {
+                  const isCbamPrecursor =
+                    typeof m.isCbamRelevantPrecursor === 'boolean'
+                      ? m.isCbamRelevantPrecursor
+                      : isCbamPrecursorCnCode(m.cnCode8);
+                  return (
+                    <tr key={m.id} className="text-slate-200">
+                      <td className="py-2.5 px-4 font-sans font-medium text-white">{m.name}</td>
+                      <td className="py-2.5 px-4 text-blue-400">{m.cnCode8 || '—'}</td>
+                      <td className="py-2.5 px-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateBomMaterial(m.id, { isCbamRelevantPrecursor: !isCbamPrecursor })
+                          }
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+                            isCbamPrecursor
+                              ? 'bg-blue-500/15 text-blue-300 border-blue-500/35 hover:bg-blue-500/25'
+                              : 'bg-white/[0.04] text-slate-500 border-white/[0.08] hover:text-slate-300'
+                          }`}
+                        >
+                          {isCbamPrecursor ? t.cbam.cbamPrecursorBadge : 'ISO'}
+                        </button>
+                      </td>
+                      <td className="py-2.5 px-4">{m.quantityTons} t</td>
+                      <td className="py-2.5 px-4">{m.efTco2ePerTon} tCO₂e/t</td>
+                      <td className="py-2.5 px-4 text-emerald-400">
+                        {(m.quantityTons * m.efTco2ePerTon).toFixed(2)} tCO₂e
+                      </td>
+                      <td className="py-2.5 px-4 text-end">
+                        <button
+                          type="button"
+                          onClick={() => removeBomMaterial(m.id)}
+                          className="text-slate-500 hover:text-red-400 p-1"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -469,7 +803,7 @@ export default function CbamPage() {
         entries={pdfBomEntries}
         companyName={auditData.companyName || 'Entreprise'}
         quarter="T1 (Q1)"
-        reportingYear={cbamResult.cbamScope.reportingYear}
+        reportingYear={cbam.reportingYear}
       />
     </div>
   );

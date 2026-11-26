@@ -2,16 +2,12 @@
 
 // ==============================================================================
 // SymbioCarb AI - Audit Report & Supplier Emissions Communication PDF Dialog
-// Displays unified numbers from cbam-calculator.ts (identical to cockpit & XML).
+// Displays Result A (ISO 14064-1) and Result B (CBAM 2026+) side by side with
+// explicit regulatory rules applied.
 // ==============================================================================
 
 import React from 'react';
-import {
-  X,
-  Printer,
-  ShieldCheck,
-  Lock,
-} from 'lucide-react';
+import { X, Printer, ShieldCheck, Lock } from 'lucide-react';
 import { CbamCalculationResult, BomEntry } from '@/types';
 import { STEG_GRID_EF_KG_CO2E_PER_KWH } from '@/lib/engine/cbam-config';
 
@@ -96,127 +92,95 @@ export function AuditReportDialog({
             <div className="text-end text-xs space-y-0.5 font-mono">
               <div className="font-bold text-slate-900">DOSSIER N° SC-CBAM-{reportingYear}</div>
               <div className="text-slate-500">Date d&apos;édition : {new Date().toLocaleDateString('fr-FR')}</div>
-              <div className="text-emerald-700 font-bold">Période : {quarter} {reportingYear}</div>
+              <div className="text-emerald-700 font-bold">Année : {reportingYear} ({quarter})</div>
             </div>
           </div>
 
-          {/* Plant & Verifier Details */}
-          <div className="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs">
+          {/* Plant & Regulatory Rules Applied */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs">
             <div className="space-y-1">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Installation Productrice</div>
               <div className="font-bold text-sm text-slate-900">{companyName}</div>
               <div className="text-slate-600">Site Industriel, Tunisie</div>
               <div className="text-slate-500 font-mono text-[11px]">Code NC / CN : {result.cnCode8 || '—'}</div>
+              <div className="text-slate-500 font-mono text-[11px]">
+                Production : {result.finishedProductTons} t · Export UE : {cbam.exportTonnes} t
+              </div>
             </div>
 
             <div className="space-y-1 border-s border-slate-200 ps-4">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Cadre Réglementaire &amp; Normatif</div>
-              <div className="font-bold text-slate-900">Règlement (UE) 2023/956 (Période Définitive)</div>
-              <div className="text-slate-600">Norme ISO 14064-1:2018 (Scope 1, 2, 3)</div>
-              <div className="text-emerald-700 font-bold font-mono">
-                Facteur Réseau STEG : {STEG_GRID_EF_KG_CO2E_PER_KWH} kgCO₂e/kWh
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Règles CBAM Appliquées (Période Définitive)</div>
+              <div className="font-mono text-[11px] text-slate-800">
+                Secteur : <strong>{cbam.sector}</strong> · Indirectes comptées :{' '}
+                <strong>{cbam.indirectEmissionsIncluded ? 'Oui' : 'Non'}</strong>
+              </div>
+              <div className="font-mono text-[11px] text-slate-800">
+                Précurseurs comptés : <strong>{cbam.cbamRelevantPrecursorsTco2e} tCO₂e</strong>
+              </div>
+              <div className="font-mono text-[11px] text-slate-800">
+                Année : <strong>{cbam.reportingYear}</strong> · Facteur allocation gratuite :{' '}
+                <strong>{(cbam.freeAllocationFactor * 100).toFixed(1)}%</strong>
+              </div>
+              <div className="font-mono text-[11px] text-emerald-700 font-bold">
+                Benchmark : {cbam.benchmarkTco2ePerTon} tCO₂e/t · Prix indicatif : {cbam.cbamCertificatePriceEur} €/t
               </div>
             </div>
           </div>
 
-          {/* Key Metric Highlights */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-slate-200 p-3 text-center bg-slate-50">
-              <div className="text-[10px] font-bold uppercase text-slate-500">SEE CBAM (Scope B)</div>
-              <div className="text-2xl font-black text-slate-900 font-mono mt-1 tabular-nums">
-                {result.hasProduction && cbam.isInCbamScope ? cbam.cbamSeeTco2ePerTon : '—'}
+          {/* Side-by-Side Result A & Result B */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-slate-300 bg-slate-50 p-4 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                A. Empreinte Corporate Complète (ISO 14064-1)
               </div>
-              <div className="text-[10px] text-slate-500">tCO₂e par tonne de produit</div>
+              <div className="text-2xl font-black text-slate-900 font-mono tabular-nums">
+                {result.hasData ? `${corp.totalTco2e.toLocaleString('fr-FR')} tCO₂e/an` : '—'}
+              </div>
+              <div className="text-[11px] text-slate-600 font-mono space-y-0.5">
+                <div>Scope 1 (combustibles) : {corp.scope1DirectTco2e} tCO₂e</div>
+                <div>Scope 2 (électricité STEG {STEG_GRID_EF_KG_CO2E_PER_KWH}) : {corp.scope2IndirectTco2e} tCO₂e</div>
+                <div>Scope 3 (tous intrants BOM) : {corp.scope3AllBomTco2e} tCO₂e</div>
+                <div>Intensité corporate : {result.hasProduction ? `${corp.intensityTco2ePerTon} tCO₂e/t` : '—'}</div>
+              </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 p-3 text-center bg-slate-50">
-              <div className="text-[10px] font-bold uppercase text-slate-500">Bilan Corporate (Scope A)</div>
-              <div className="text-2xl font-black text-slate-900 font-mono mt-1 tabular-nums">
-                {result.hasData ? corp.totalTco2e : '—'}
+            <div className="rounded-xl border border-emerald-400 bg-emerald-50/70 p-4 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                B. Émissions Incorporées CBAM (Règl. UE 2023/956)
               </div>
-              <div className="text-[10px] text-slate-500">tCO₂e/an (ISO 14064-1)</div>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 p-3 text-center bg-slate-50">
-              <div className="text-[10px] font-bold uppercase text-slate-500">Exposition Importateur UE</div>
-              <div className="text-2xl font-black text-emerald-700 font-mono mt-1 tabular-nums">
+              <div className="text-2xl font-black text-emerald-900 font-mono tabular-nums">
                 {result.hasProduction && cbam.isInCbamScope
-                  ? `${cbam.estimatedLiabilityEur.toLocaleString('fr-FR')} €`
+                  ? `${cbam.cbamSeeTco2ePerTon} tCO₂e/t`
                   : '—'}
               </div>
-              <div className="text-[10px] text-slate-500">
-                ~{cbam.estimatedLiabilityTnd.toLocaleString('fr-FR')} TND (Prix indicatif : {cbam.cbamCertificatePriceEur} €/t)
+              <div className="text-[11px] text-slate-700 font-mono space-y-0.5">
+                <div>Total CBAM B : {cbam.totalCbamEmbeddedTco2e} tCO₂e</div>
+                <div>Directes : {cbam.directEmissionsTco2e} · Précurseurs CBAM : {cbam.cbamRelevantPrecursorsTco2e} t</div>
+                <div>
+                  Indirectes : {cbam.indirectEmissionsCountedTco2e} t comptées (info : {cbam.indirectEmissionsForInfoTco2e} t)
+                </div>
+                <div className="font-bold text-emerald-800">
+                  Exposition importateur :{' '}
+                  {result.hasProduction && cbam.isInCbamScope
+                    ? `${cbam.estimatedLiabilityEur.toLocaleString('fr-FR')} € (${cbam.certificatesRequired} cert.)`
+                    : '—'}
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Emissions Breakdown Table */}
-          <div className="space-y-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              1. Décomposition des Émissions (Scope 1, 2 &amp; Précurseurs)
-            </h2>
-            <table className="w-full border-collapse border border-slate-300 text-xs">
-              <thead>
-                <tr className="bg-slate-100 text-slate-700 font-bold">
-                  <th className="border border-slate-300 p-2 text-start">Poste d&apos;Émission</th>
-                  <th className="border border-slate-300 p-2 text-start">Source de Données</th>
-                  <th className="border border-slate-300 p-2 text-end">Volume (tCO₂e)</th>
-                  <th className="border border-slate-300 p-2 text-end">Quote-part A (%)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-slate-300 p-2 font-medium">Scope 1 : Émissions Directes de Fabrication</td>
-                  <td className="border border-slate-300 p-2 text-slate-600">Combustibles site (gaz, fuel, gasoil)</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono font-bold tabular-nums">{corp.scope1DirectTco2e}</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono tabular-nums">
-                    {((corp.scope1DirectTco2e / (corp.totalTco2e || 1)) * 100).toFixed(1)}%
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border border-slate-300 p-2 font-medium">Scope 2 : Électricité Moyenne Tension STEG</td>
-                  <td className="border border-slate-300 p-2 text-slate-600">Factures STEG MT ({STEG_GRID_EF_KG_CO2E_PER_KWH} kg/kWh)</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono font-bold tabular-nums">{corp.scope2IndirectTco2e}</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono tabular-nums">
-                    {((corp.scope2IndirectTco2e / (corp.totalTco2e || 1)) * 100).toFixed(1)}%
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border border-slate-300 p-2 font-medium">Scope 3 : Matières Premières &amp; Précurseurs</td>
-                  <td className="border border-slate-300 p-2 text-slate-600">Nomenclatures BOM (dont {cbam.cbamRelevantPrecursorsTco2e} tCO₂e précurseurs CBAM)</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono font-bold tabular-nums">{corp.scope3AllBomTco2e}</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono tabular-nums">
-                    {((corp.scope3AllBomTco2e / (corp.totalTco2e || 1)) * 100).toFixed(1)}%
-                  </td>
-                </tr>
-                <tr className="bg-slate-50 font-bold">
-                  <td className="border border-slate-300 p-2" colSpan={2}>TOTAL EMPREINTE CORPORATE A (ISO 14064-1)</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono text-slate-900 tabular-nums">{corp.totalTco2e}</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono">100.0%</td>
-                </tr>
-                <tr className="bg-emerald-50 font-bold">
-                  <td className="border border-slate-300 p-2" colSpan={2}>TOTAL ÉMISSIONS INCORPORÉES CBAM B (Secteur : {cbam.sector})</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono text-emerald-800 tabular-nums">{cbam.totalCbamEmbeddedTco2e}</td>
-                  <td className="border border-slate-300 p-2 text-end font-mono text-emerald-800">
-                    Indirectes : {cbam.indirectEmissionsIncluded ? 'Incluses' : 'Exclues'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
 
           {/* BOM Items Table */}
           <div className="space-y-2">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              2. Nomenclatures d&apos;Achats &amp; Facteurs d&apos;Émission Associés
+              Nomenclatures d&apos;Achats &amp; Statut Précurseur CBAM
             </h2>
             <table className="w-full border-collapse border border-slate-300 text-xs">
               <thead>
                 <tr className="bg-slate-100 text-slate-700 font-bold">
                   <th className="border border-slate-300 p-1.5 text-start">Composant</th>
                   <th className="border border-slate-300 p-1.5 text-start">Code NC / SH</th>
+                  <th className="border border-slate-300 p-1.5 text-start">Périmètre</th>
                   <th className="border border-slate-300 p-1.5 text-end">Masse</th>
-                  <th className="border border-slate-300 p-1.5 text-end">Facteur d&apos;Émission</th>
                   <th className="border border-slate-300 p-1.5 text-end">Émissions</th>
                 </tr>
               </thead>
@@ -232,8 +196,10 @@ export function AuditReportDialog({
                     <tr key={entry.id}>
                       <td className="border border-slate-300 p-1.5 font-medium">{entry.raw_description}</td>
                       <td className="border border-slate-300 p-1.5 font-mono text-[11px]">{entry.matched_ef?.cn_code_8 || '—'}</td>
+                      <td className="border border-slate-300 p-1.5 font-mono text-[10px]">
+                        {entry.matched_ef?.source_authority || 'BOM'}
+                      </td>
                       <td className="border border-slate-300 p-1.5 text-end font-mono">{entry.quantity.toLocaleString()} {entry.unit}</td>
-                      <td className="border border-slate-300 p-1.5 text-end font-mono text-slate-600">{entry.matched_ef?.ef_kgco2e_per_unit ?? 0} kgCO₂e/t</td>
                       <td className="border border-slate-300 p-1.5 text-end font-mono font-bold text-slate-900">{entry.total_tco2e} tCO₂e</td>
                     </tr>
                   ))
