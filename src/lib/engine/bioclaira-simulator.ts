@@ -16,6 +16,8 @@ export interface BioClairaInput {
   discountRatePct?: number;      // WACC for NPV calculation (default 8.5%)
 }
 
+export const BIOCLAIRA_DEFAULT_WACC = 0.085; // 8.5% WACC for Tunisian industrial NPV/CRF
+
 export const BIOCLAIRA_CONSTANTS = {
   // Market values in Tunisian Dinars (TND)
   PRIX_MARCHE_CHARBON_ACTIF_TND_TONNE: 7500.0, // Replacing imported AC at 6,500 - 9,000 TND/t

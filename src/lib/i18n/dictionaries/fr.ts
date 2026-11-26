@@ -318,6 +318,42 @@ export const fr = {
     filterAll: 'Tous les gouvernorats',
   },
 
+  // Plan d'Action & Courbe MAC
+  plan: {
+    title: 'Plan d’Action Décarbonation & Courbe d’Abattement Marginal (MAC)',
+    subtitle: 'Classement déterministe de vos leviers par coût par tonne de CO₂e évitée (TND/tCO₂e) avec distinction Périmètre Corporate vs CBAM',
+    chartTitle: 'Courbe des Coûts Marginaux d’Abattement (MACC — WACC 8,5%)',
+    chartSubtitle: 'Largeur = tCO₂e évitées/an · Hauteur = coût annualisé net par tCO₂e (négatif = levier rentable en vert ; hachuré = réduit le CBAM)',
+    emptyTitle: 'Aucune donnée pour construire le plan d’action',
+    emptyDesc: 'Ajoutez vos factures STEG, intrants matières CBAM ou gisements déchets pour classer vos leviers de décarbonation.',
+    totalsFootprintAvoided: 'Empreinte évitée (Scope A)',
+    totalsCbamAvoided: 'Émissions CBAM évitées (Scope B)',
+    totalsCbamSaved: 'Économie CBAM estimée',
+    totalsAnnualNetSaving: 'Gain financier annuel net',
+    colLever: 'Levier',
+    colCo2: 'tCO₂e/an',
+    colCbamCo2: 'CBAM tCO₂e/an',
+    colCapex: 'CAPEX (TND)',
+    colAnnualSaving: 'Gain net / an',
+    colPayback: 'Retour',
+    colCostPerTonne: 'Coût / tCO₂e',
+    assumptionsBtn: 'Hypothèses',
+    completeData: 'Compléter vos données',
+    unavailableLabel: 'Données manquantes',
+    financialOnlyBadge: 'Financier uniquement (hors courbe)',
+    bioclairaNote: 'Par conception, BioClaira réduit le bilan GES de l’usine (Scope A) et génère des revenus circulaires, mais ne réduit pas les émissions incorporées CBAM du produit exporté (Scope B).',
+    cbamBadge: 'CBAM',
+    pvControlsTitle: 'Paramètres Solaire Photovoltaïque & Déplacement de charge',
+    precursorControlsTitle: 'Changement de fournisseur précurseur bas-carbone (CBAM)',
+    levers: {
+      cosPhi: 'Compensation énergie réactive (cos φ → 0,95)',
+      loadShifting: 'Effacement & déplacement de charge Pointe → Nuit',
+      solarPv: 'Solaire photovoltaïque en autoconsommation (toiture)',
+      precursorSwitch: 'Substitution fournisseur précurseur bas-carbone',
+      bioclaira: 'Valorisation thermochimique BioClaira (Pack Gold)',
+    },
+  },
+
   // Document AI / OCR Module
   ocr: {
     title: 'Document AI : Factures STEG & Nomenclatures',

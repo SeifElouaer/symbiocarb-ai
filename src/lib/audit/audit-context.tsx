@@ -13,6 +13,7 @@ import { calculateStegMtBill } from '@/lib/engine/steg-tariffs';
 import { solveCosPhiCompensation } from '@/lib/engine/cos-phi-solver';
 import { simulateBioClairaValorization } from '@/lib/engine/bioclaira-simulator';
 import { calculateCbamReport } from '@/lib/engine/cbam-calculator';
+import { AbatementPlanResult, buildAbatementPlan } from '@/lib/engine/abatement-plan';
 import {
   DEFAULT_CBAM_CERTIFICATE_PRICE_EUR,
   EUR_TO_TND_RATE,
@@ -110,6 +111,7 @@ export interface AuditWizardData {
   solarRoofAreaM2: number;
   solarYieldKwhPerKwp: number;
   solarCapexTndPerKwp: number;
+  flexibleLoadPct: number;
   precursorSwitches: Record<string, PrecursorSwitchConfig>;
 
   // 4. BioClaira (Audit Déchet Séparé - Pack Gold)
@@ -166,6 +168,7 @@ export const INITIAL_AUDIT_DATA: AuditWizardData = {
   solarRoofAreaM2: 0,
   solarYieldKwhPerKwp: 1650,
   solarCapexTndPerKwp: 2800,
+  flexibleLoadPct: 25,
   precursorSwitches: {},
 
   wasteType: 'olive_pomace',
@@ -216,6 +219,9 @@ export interface AuditResults {
   biocharYieldTonsPerYear: number;
   co2SequestrationTco2ePerYear: number;
   annualCircularValorizationTnd: number;
+
+  // Decarbonization Action Plan (MACC)
+  abatementPlan: AbatementPlanResult;
 
   // Global Readiness
   readinessScorePercent: number;
@@ -287,7 +293,7 @@ function normalizeHydratedData(parsed: Partial<AuditWizardData>, fallbackEmail =
 }
 
 export function AuditProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, subscriptionPlan } = useAuth();
   const [auditData, setAuditData] = useState<AuditWizardData>(INITIAL_AUDIT_DATA);
   const [isAddDataOpen, setIsAddDataOpen] = useState(false);
   const [addDataInitialTab, setAddDataInitialTab] = useState<'steg' | 'cbam' | 'profile'>('steg');
@@ -611,6 +617,36 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
     if (auditData.bomMaterials.length > 0 || auditData.steelTons > 0 || auditData.aluminumTons > 0)
       score += 10;
 
+    const abatementPlan = buildAbatementPlan({
+      sector: auditData.sector,
+      subscriptionPlan,
+      kwhJour: auditData.kwhJour,
+      kwhPointe: auditData.kwhPointe,
+      kwhSoir: auditData.kwhSoir,
+      kwhNuit: auditData.kwhNuit,
+      cosPhi: auditData.cosPhi,
+      reactivePenaltyTnd: auditData.reactivePenaltyTnd,
+      flexibleLoadPct: auditData.flexibleLoadPct,
+      solarRoofAreaM2: auditData.solarRoofAreaM2,
+      solarYieldKwhPerKwp: auditData.solarYieldKwhPerKwp,
+      solarCapexTndPerKwp: auditData.solarCapexTndPerKwp,
+      exportCnCode: auditData.exportCnCode,
+      exportProductName: auditData.exportProductName,
+      annualProductionTons: auditData.annualProductionTons,
+      annualExportTons: auditData.annualExportTons,
+      naturalGasM3: auditData.naturalGasM3,
+      heavyFuelTons: auditData.heavyFuelTons,
+      dieselLiters: auditData.dieselLiters,
+      bomMaterials: auditData.bomMaterials,
+      precursorSwitches: auditData.precursorSwitches,
+      cbamReportingYear: auditData.cbamReportingYear,
+      cbamCertificatePriceEur: auditData.cbamCertificatePriceEur,
+      carbonPricePaidAbroadEur: auditData.carbonPricePaidAbroadEur,
+      wasteType: auditData.wasteType,
+      wasteMonthlyTons: auditData.wasteMonthlyTons,
+      moisturePercent: auditData.moisturePercent,
+    });
+
     return {
       hasEnergyData,
       hasCarbonData,
@@ -643,6 +679,7 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
       biocharYieldTonsPerYear,
       co2SequestrationTco2ePerYear,
       annualCircularValorizationTnd,
+      abatementPlan,
       readinessScorePercent: Math.min(100, score),
     };
   };

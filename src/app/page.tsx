@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAudit } from '@/lib/audit/audit-context';
 import { useTranslation } from '@/lib/i18n/use-translation';
+import { formatSignedAmount } from '@/lib/format/signed-amount';
 import {
   ArrowRight,
   Plus,
@@ -328,6 +329,47 @@ export default function HomePage() {
                 <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-emerald-400 rtl:rotate-180 shrink-0" />
               </Link>
             </div>
+
+            {/* Action Plan MACC Cockpit Card */}
+            {(() => {
+              const plan = results.abatementPlan;
+              const netFmt = formatSignedAmount(
+                plan.totalAnnualNetSavingTnd,
+                t.cockpit.unitTndYear,
+                locale
+              );
+              return (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">{t.cockpit.actionPlanCardTitle}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                      MACC
+                    </span>
+                  </div>
+                  {plan.hasAnyAvailableLever ? (
+                    <p className="text-[11px] text-slate-300 leading-relaxed font-mono tabular-nums">
+                      {t.cockpit.actionPlanSummaryPrefix}{' '}
+                      <strong className="text-white">
+                        {plan.totalFootprintAvoidedTco2e.toLocaleString(numLocale)}
+                      </strong>{' '}
+                      {t.cockpit.actionPlanAvoidable},{' '}
+                      <strong className={netFmt.colorClass}>{netFmt.text}</strong>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      {t.cockpit.actionPlanEmpty}
+                    </p>
+                  )}
+                  <Link
+                    href="/plan"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 hover:text-emerald-200"
+                  >
+                    <span>{t.cockpit.openActionPlan}</span>
+                    <ArrowRight className="h-3 w-3 rtl:rotate-180" />
+                  </Link>
+                </div>
+              );
+            })()}
 
             {/* BioClaira Pack Gold Separate Add-on Card */}
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-2">

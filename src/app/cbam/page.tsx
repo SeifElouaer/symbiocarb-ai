@@ -1012,6 +1012,7 @@ export default function CbamPage() {
         quarter="T1 (Q1)"
         reportingYear={cbam.reportingYear}
         defaultComparison={defaultComparison}
+        abatementPlan={results.abatementPlan}
       />
     </div>
   );

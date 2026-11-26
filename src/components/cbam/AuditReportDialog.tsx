@@ -11,6 +11,8 @@ import { X, Printer, ShieldCheck, Lock } from 'lucide-react';
 import { CbamCalculationResult, BomEntry } from '@/types';
 import { STEG_GRID_EF_KG_CO2E_PER_KWH } from '@/lib/engine/cbam-config';
 import { CbamDefaultComparisonResult } from '@/lib/engine/cbam-default-comparator';
+import { AbatementPlanResult } from '@/lib/engine/abatement-plan';
+import { formatSignedAmount } from '@/lib/format/signed-amount';
 
 interface AuditReportDialogProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ interface AuditReportDialogProps {
   quarter: string;
   reportingYear: number;
   defaultComparison?: CbamDefaultComparisonResult | null;
+  abatementPlan?: AbatementPlanResult | null;
 }
 
 export function AuditReportDialog({
@@ -32,6 +35,7 @@ export function AuditReportDialog({
   quarter,
   reportingYear,
   defaultComparison,
+  abatementPlan,
 }: AuditReportDialogProps) {
   if (!isOpen) return null;
 
@@ -239,6 +243,50 @@ export function AuditReportDialog({
               </tbody>
             </table>
           </div>
+
+          {/* Action Plan MACC Section (when available) */}
+          {abatementPlan && abatementPlan.curveLevers.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                Plan d&apos;Action Décarbonation Classé (MACC — WACC 8,5%)
+              </h2>
+              <table className="w-full border-collapse border border-slate-300 text-xs">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-700 font-bold">
+                    <th className="border border-slate-300 p-1.5 text-start">Levier</th>
+                    <th className="border border-slate-300 p-1.5 text-end">tCO₂e/an</th>
+                    <th className="border border-slate-300 p-1.5 text-end">CBAM</th>
+                    <th className="border border-slate-300 p-1.5 text-end">CAPEX (TND)</th>
+                    <th className="border border-slate-300 p-1.5 text-end">Gain net/an</th>
+                    <th className="border border-slate-300 p-1.5 text-end">Coût / tCO₂e</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {abatementPlan.curveLevers.map((l) => {
+                    const gainFmt = formatSignedAmount(l.annualNetSavingTnd, 'TND', 'fr');
+                    const costFmt = formatSignedAmount(l.costPerTco2Tnd, 'TND/t', 'fr');
+                    return (
+                      <tr key={l.id}>
+                        <td className="border border-slate-300 p-1.5 font-medium">{l.id}</td>
+                        <td className="border border-slate-300 p-1.5 text-end font-mono">{l.annualTco2eAvoided}</td>
+                        <td className="border border-slate-300 p-1.5 text-end font-mono">
+                          {l.reducesCbamLiability ? `${l.cbamTco2eAvoided} t` : 'Non'}
+                        </td>
+                        <td className="border border-slate-300 p-1.5 text-end font-mono">{l.capexTnd.toLocaleString('fr-FR')}</td>
+                        <td className="border border-slate-300 p-1.5 text-end font-mono">{gainFmt.text}</td>
+                        <td className="border border-slate-300 p-1.5 text-end font-mono font-bold">{costFmt.text}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="text-[11px] font-mono text-slate-600">
+                Total évitable : {abatementPlan.totalFootprintAvoidedTco2e} tCO₂e/an · CBAM évitable :{' '}
+                {abatementPlan.totalCbamAvoidedTco2e} tCO₂e/an · Économie CBAM ({abatementPlan.reportingYear}) :{' '}
+                {abatementPlan.cbamAnnualSavedEur.toLocaleString('fr-FR')} €
+              </div>
+            </div>
+          )}
 
           {/* Signatures & Certification Block */}
           <div className="pt-4 border-t border-slate-300 grid grid-cols-2 gap-8 text-xs">
